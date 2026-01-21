@@ -7,7 +7,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.8" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-rc.2.25502.107" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Api\Authorization\" />
+    <Folder Include="Api\Controllers\" />
+    <Folder Include="Application\DTOs\" />
+    <Folder Include="Application\Validators\" />
+    <Folder Include="Application\Services\" />
+    <Folder Include="Domain\Enums\" />
+    <Folder Include="Domain\ValueObjects\" />
+    <Folder Include="Infrastructure\Settings\" />
+    <Folder Include="Infrastructure\Services\" />
+    <Folder Include="Infrastructure\Repositories\" />
+    <Folder Include="Infrastructure\Persistence\Configurations\" />
+    <Folder Include="Infrastructure\Persistence\Migrations\" />
+    <Folder Include="public\imageUser\" />
   </ItemGroup>
 
 </Project>
