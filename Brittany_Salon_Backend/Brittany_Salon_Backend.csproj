@@ -15,6 +15,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
   </ItemGroup>
 
@@ -24,7 +25,6 @@
     <Folder Include="Domain\Enums\" />
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="Infrastructure\Settings\" />
-    <Folder Include="Infrastructure\Services\" />
     <Folder Include="Infrastructure\Repositories\" />
     <Folder Include="Infrastructure\Persistence\Configurations\" />
     <Folder Include="public\imageUser\" />

@@ -19,8 +19,10 @@ namespace Brittany_Salon_Backend.Application.DTOs.Employee
         [MaxLength(255)]
         public string Password { get; set; } = string.Empty;
 
-        [MaxLength(255)]
-        public string? Image { get; set; }
+        /// <summary>
+        /// Imagen en formato Base64 (data:image/png;base64,... o solo el contenido Base64)
+        /// </summary>
+        public string? ImageBase64 { get; set; }
 
         [MaxLength(100)]
         public string? Specialty { get; set; }

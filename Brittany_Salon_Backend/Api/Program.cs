@@ -1,7 +1,9 @@
 using Brittany_Salon_Backend.Application.Services;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
+using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options => // Configura EF Core + SQ
 
 builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyección de dependencias
 builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyección de dependencias Employee
+builder.Services.AddScoped<IImageService, ImageService>(); // Inyección de dependencias Image
 
 var app = builder.Build();
 
@@ -25,6 +28,19 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection(); // Redirige HTTP -> HTTPS
+
+// Habilita acceso a archivos estáticos desde /imageUser
+var imageUserPath = Path.Combine(builder.Environment.ContentRootPath, "public", "imageUser");
+if (!Directory.Exists(imageUserPath))
+{
+    Directory.CreateDirectory(imageUserPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imageUserPath),
+    RequestPath = "/imageUser"
+});
 
 app.MapControllers(); // Mapea rutas de Controllers
 
