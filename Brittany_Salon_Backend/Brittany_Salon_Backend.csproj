@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <Folder Include="Api\Authorization\" />
-    <Folder Include="Application\Validators\" />
     <Folder Include="Domain\Enums\" />
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="Infrastructure\Settings\" />

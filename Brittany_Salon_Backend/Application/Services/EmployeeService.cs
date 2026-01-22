@@ -1,5 +1,7 @@
 using Brittany_Salon_Backend.Application.DTOs.Employee;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Validators;
 using Brittany_Salon_Backend.Domain.Entities;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
@@ -20,18 +22,25 @@ namespace Brittany_Salon_Backend.Application.Services
 
         public async Task<EmployeeReadDto> CreateAsync(EmployeeCreateDto dto)
         {
-            // Validación: email repetido
-            var emailExists = await _db.Employees.AnyAsync(x => x.Email == dto.Email);
-            if (emailExists)
-                throw new InvalidOperationException("Ya existe un empleado con ese correo electrónico.");
+            // Paso 1: Validaciones de formato y reglas de negocio
+            var validationErrors = EmployeeValidator.ValidateCreate(dto);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
-            // Crear entidad sin imagen primero para obtener el ID
+            // Paso 2: Normalizar datos
+            var normalizedEmail = dto.Email.Trim().ToLower();
+            var normalizedName = NormalizeName(dto.Name);
+
+            // Paso 3: Validaciones contra base de datos
+            await ValidateUniqueConstraintsAsync(normalizedEmail, dto.Phone);
+
+            // Paso 4: Crear entidad
             var entity = new Employee
             {
-                Name = dto.Name.Trim(),
+                Name = normalizedName,
                 Phone = dto.Phone,
-                Email = dto.Email.Trim(),
-                Password = dto.Password,
+                Email = normalizedEmail,
+                Password = dto.Password, // TODO: En producción, hashear la contraseña
                 Specialty = dto.Specialty?.Trim(),
                 IsActive = dto.IsActive ?? true,
                 DateCreated = DateTime.Now
@@ -40,22 +49,71 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Employees.Add(entity);
             await _db.SaveChangesAsync();
 
-            // Procesar imagen si se proporcionó
+            // Paso 5: Procesar imagen si se proporcionó
             if (!string.IsNullOrWhiteSpace(dto.ImageBase64))
             {
-                try
-                {
-                    string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(dto.ImageBase64, entity.Id);
-                    entity.Image = imageUrl;
-                    await _db.SaveChangesAsync();
-                }
-                catch (ArgumentException ex)
-                {
-                    // Si falla el procesamiento de imagen, el empleado ya está creado pero sin imagen
-                    throw new InvalidOperationException($"Empleado creado pero error al procesar imagen: {ex.Message}");
-                }
+                await ProcessEmployeeImageAsync(entity, dto.ImageBase64);
             }
 
+            // Paso 6: Retornar DTO de respuesta
+            return MapToReadDto(entity);
+        }
+
+        /// <summary>
+        /// Valida que no existan duplicados en email y teléfono
+        /// </summary>
+        private async Task ValidateUniqueConstraintsAsync(string email, int phone)
+        {
+            // Verificar email duplicado
+            var emailExists = await _db.Employees.AnyAsync(x => x.Email == email);
+            if (emailExists)
+                throw new DuplicateResourceException("Email", "Ya existe un empleado registrado con este correo electrónico.");
+
+            // Verificar teléfono duplicado
+            var phoneExists = await _db.Employees.AnyAsync(x => x.Phone == phone);
+            if (phoneExists)
+                throw new DuplicateResourceException("Phone", "Ya existe un empleado registrado con este número de teléfono.");
+        }
+
+        /// <summary>
+        /// Normaliza el nombre: capitaliza primera letra de cada palabra
+        /// </summary>
+        private static string NormalizeName(string name)
+        {
+            var trimmed = name.Trim();
+            var words = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            
+            var normalized = words.Select(word => 
+                char.ToUpper(word[0]) + word[1..].ToLower()
+            );
+
+            return string.Join(" ", normalized);
+        }
+
+        /// <summary>
+        /// Procesa y guarda la imagen del empleado
+        /// </summary>
+        private async Task ProcessEmployeeImageAsync(Employee entity, string imageBase64)
+        {
+            try
+            {
+                string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(imageBase64, entity.Id);
+                entity.Image = imageUrl;
+                await _db.SaveChangesAsync();
+            }
+            catch (ArgumentException ex)
+            {
+                // Log del error pero no fallar el registro completo
+                // En producción: _logger.LogWarning(ex, "Error al procesar imagen para empleado {Id}", entity.Id);
+                throw new ValidationException($"Error al procesar la imagen: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Mapea la entidad Employee a DTO de lectura
+        /// </summary>
+        private static EmployeeReadDto MapToReadDto(Employee entity)
+        {
             return new EmployeeReadDto
             {
                 Id = entity.Id,
