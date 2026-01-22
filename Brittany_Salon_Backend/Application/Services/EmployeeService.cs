@@ -3,6 +3,7 @@ using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Application.Validators;
 using Brittany_Salon_Backend.Domain.Entities;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
@@ -14,17 +15,21 @@ namespace Brittany_Salon_Backend.Application.Services
     {
         private readonly AppDbContext _db;
         private readonly IImageService _imageService;
+        private readonly IDevLogger _logger;
 
-        public EmployeeService(AppDbContext db, IImageService imageService)
+        public EmployeeService(AppDbContext db, IImageService imageService, IDevLogger logger)
         {
             _db = db;
             _imageService = imageService;
+            _logger = logger;
         }
 
         public async Task<EmployeeReadDto> CreateAsync(EmployeeCreateDto dto)
         {
+            _logger.LogInfo("Iniciando creación de empleado: {Email}", dto.Email);
+
             // Paso 1: Validaciones de formato y reglas de negocio
-            var validationErrors = EmployeeValidator.ValidateCreate(dto);
+            var validationErrors = EmployeeValidator.ValidateCreate(dto, _logger);
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 

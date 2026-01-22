@@ -1,5 +1,6 @@
 using Brittany_Salon_Backend.Application.Services;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,16 @@ builder.Services.AddSwaggerGen(); // Genera Swagger UI
 
 builder.Services.AddDbContext<AppDbContext>(options => // Configura EF Core + SQL Server
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Registrar DevLogger - Solo loggea en Development
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<IDevLogger, DevLogger>();
+}
+else
+{
+    builder.Services.AddScoped<IDevLogger, NullDevLogger>();
+}
 
 builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyección de dependencias
 builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyección de dependencias Employee

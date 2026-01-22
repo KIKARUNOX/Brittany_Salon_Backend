@@ -1,4 +1,5 @@
 using Brittany_Salon_Backend.Application.DTOs.Employee;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Microsoft.AspNetCore.Http;
 using System.Text.RegularExpressions;
 
@@ -18,9 +19,11 @@ namespace Brittany_Salon_Backend.Application.Validators
         /// <summary>
         /// Valida todos los campos del DTO de creación de empleado
         /// </summary>
-        public static List<string> ValidateCreate(EmployeeCreateDto dto)
+        public static List<string> ValidateCreate(EmployeeCreateDto dto, IDevLogger? logger = null)
         {
             var errors = new List<string>();
+
+            logger?.LogDebug("Iniciando validación de empleado...");
 
             // Validar Nombre
             errors.AddRange(ValidateName(dto.Name));
@@ -40,7 +43,16 @@ namespace Brittany_Salon_Backend.Application.Validators
             // Validar Imagen (si se proporciona)
             if (dto.Image != null)
             {
-                errors.AddRange(ValidateImageFile(dto.Image));
+                errors.AddRange(ValidateImageFile(dto.Image, logger));
+            }
+
+            if (errors.Count > 0)
+            {
+                logger?.LogWarning("Validación fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+            }
+            else
+            {
+                logger?.LogInfo("Validación exitosa para empleado: {Email}", dto.Email);
             }
 
             return errors;
@@ -203,25 +215,64 @@ namespace Brittany_Salon_Backend.Application.Validators
         /// <summary>
         /// Valida el archivo de imagen (IFormFile)
         /// </summary>
-        public static List<string> ValidateImageFile(IFormFile? file)
+        public static List<string> ValidateImageFile(IFormFile? file, IDevLogger? logger = null)
         {
             var errors = new List<string>();
 
             if (file == null || file.Length == 0)
                 return errors; // Imagen es opcional
 
+            // LOG: Información detallada del archivo recibido
+            logger?.LogDebug("========== VALIDACIÓN DE IMAGEN ==========");
+            logger?.LogDebug("FileName: {FileName}", file.FileName);
+            logger?.LogDebug("ContentType recibido: '{ContentType}'", file.ContentType);
+            logger?.LogDebug("Tamaño: {Size} bytes ({SizeMB:F2} MB)", file.Length, file.Length / 1024.0 / 1024.0);
+            logger?.LogDebug("ContentDisposition: {CD}", file.ContentDisposition);
+
             // Validar tamaño
             if (file.Length > MaxImageSize)
+            {
+                logger?.LogWarning("Imagen excede tamaño máximo: {Size} > {Max}", file.Length, MaxImageSize);
                 errors.Add("La imagen no puede exceder 5MB.");
+            }
 
-            // Validar extensión
+            // Validar extensión (más confiable que ContentType)
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            logger?.LogDebug("Extensión extraída: '{Extension}'", extension);
+            logger?.LogDebug("Extensiones permitidas: [{Allowed}]", string.Join(", ", AllowedExtensions));
+            
             if (!AllowedExtensions.Contains(extension))
+            {
+                logger?.LogWarning("Extensión no permitida: '{Extension}'", extension);
                 errors.Add($"Extensión de archivo no permitida. Formatos válidos: {string.Join(", ", AllowedExtensions)}");
+            }
 
-            // Validar content type
-            if (!AllowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
-                errors.Add($"Tipo de contenido no permitido. Tipos válidos: JPEG, PNG, GIF, WebP");
+            // Validar content type (flexibilizado para diferentes clientes)
+            var contentType = file.ContentType.ToLowerInvariant();
+            logger?.LogDebug("ContentType normalizado: '{ContentType}'", contentType);
+            logger?.LogDebug("ContentTypes permitidos: [{Allowed}]", string.Join(", ", AllowedContentTypes));
+            
+            bool isInAllowedList = AllowedContentTypes.Contains(contentType);
+            bool startsWithImage = contentType.StartsWith("image/");
+            bool isOctetStream = contentType == "application/octet-stream";
+            
+            logger?.LogDebug("¿Está en lista permitida?: {Result}", isInAllowedList);
+            logger?.LogDebug("¿Comienza con 'image/'?: {Result}", startsWithImage);
+            logger?.LogDebug("¿Es octet-stream?: {Result}", isOctetStream);
+            
+            bool isValidContentType = isInAllowedList || startsWithImage || isOctetStream;
+            
+            if (!isValidContentType)
+            {
+                logger?.LogWarning("ContentType NO válido: '{ContentType}' - No cumple ninguna condición", contentType);
+                errors.Add($"Tipo de contenido no permitido: '{file.ContentType}'. Tipos válidos: JPEG, PNG, GIF, WebP");
+            }
+            else
+            {
+                logger?.LogInfo("ContentType válido: '{ContentType}'", contentType);
+            }
+
+            logger?.LogDebug("========== FIN VALIDACIÓN DE IMAGEN ==========");
 
             return errors;
         }

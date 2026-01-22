@@ -1,6 +1,58 @@
 @Brittany_Salon_Backend_HostAddress = http://localhost:5268
 
-GET {{Brittany_Salon_Backend_HostAddress}}/weatherforecast/
+### ============================================
+### SERVICIOS (Services)
+### ============================================
+
+### Obtener todos los servicios
+GET {{Brittany_Salon_Backend_HostAddress}}/api/services
 Accept: application/json
 
 ###
+
+### Obtener solo servicios activos
+GET {{Brittany_Salon_Backend_HostAddress}}/api/services?onlyActive=true
+Accept: application/json
+
+###
+
+### Obtener servicio por ID
+GET {{Brittany_Salon_Backend_HostAddress}}/api/services/1
+Accept: application/json
+
+###
+
+### Crear nuevo servicio
+POST {{Brittany_Salon_Backend_HostAddress}}/api/services
+Content-Type: application/json
+
+{
+  "serviceName": "Corte de cabello",
+  "serviceDescription": "Corte profesional para damas y caballeros",
+  "price": 5000.00,
+  "durationMinutes": 30,
+  "imageUrl": "https://ejemplo.com/corte.jpg",
+  "serviceType": "Cabello",
+  "isActive": true
+}
+
+###
+
+### Actualizar servicio existente
+PUT {{Brittany_Salon_Backend_HostAddress}}/api/services/1
+Content-Type: application/json
+
+{
+  "serviceName": "Corte de cabello Premium",
+  "serviceDescription": "Corte profesional con lavado incluido",
+  "price": 7500.00,
+  "durationMinutes": 45,
+  "imageUrl": "https://ejemplo.com/corte-premium.jpg",
+  "serviceType": "Cabello",
+  "isActive": true
+}
+
+###
+
+### Desactivar servicio
+PATCH {{Brittany_Salon_Backend_HostAddress}}/api/services/1/deactivate
