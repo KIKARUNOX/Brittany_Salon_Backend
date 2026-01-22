@@ -1,0 +1,25 @@
+﻿Backend/
+└── src/
+    ├── Api/
+    │   ├── Controllers/
+    │   ├── Authorization/
+    │   └── Program.cs
+    │
+    ├── Application/
+    │   ├── Interfaces/
+    │   ├── Services/
+    │   ├── DTOs/
+    │   └── Validators/
+    │
+    ├── Domain/
+    │   ├── Entities/
+    │   ├── ValueObjects/
+    │   └── Enums/
+    │
+    ├── Infrastructure/
+    │   ├── Persistence/
+    │   │   ├── Configurations/
+    │   │   └── Migrations/
+    │   ├── Repositories/
+    │   ├── Services/
+    │   └── Settings/
