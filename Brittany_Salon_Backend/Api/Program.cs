@@ -1,43 +1,30 @@
+using Brittany_Salon_Backend.Application.Services;
+using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Instalacion del proyecto
+builder.Services.AddControllers(); // Habilita Controllers
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer(); // Permite descubrir endpoints para Swagger
+builder.Services.AddSwaggerGen(); // Genera Swagger UI
+
+builder.Services.AddDbContext<AppDbContext>(options => // Configura EF Core + SQL Server
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyección de dependencias
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger(); // Habilita Swagger
+    app.UseSwaggerUI(); // Habilita Swagger UI
 }
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); // Redirige HTTP -> HTTPS
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot",  "Scorching"
-};
+app.MapControllers(); // Mapea rutas de Controllers
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+app.Run(); // Inicia la API
