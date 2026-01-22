@@ -19,16 +19,17 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// <summary>
         /// Registra un nuevo empleado
         /// </summary>
-        /// <param name="dto">Datos del empleado a registrar</param>
+        /// <param name="dto">Datos del empleado a registrar (multipart/form-data)</param>
         /// <returns>Empleado creado</returns>
         /// <response code="201">Empleado creado exitosamente</response>
         /// <response code="400">Errores de validación</response>
         /// <response code="409">Email o teléfono ya registrado</response>
         [HttpPost]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(EmployeeReadDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<EmployeeReadDto>> Create([FromBody] EmployeeCreateDto dto)
+        public async Task<ActionResult<EmployeeReadDto>> Create([FromForm] EmployeeCreateDto dto)
         {
             try
             {

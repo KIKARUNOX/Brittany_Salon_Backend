@@ -1,15 +1,19 @@
 using Brittany_Salon_Backend.Application.DTOs.Employee;
+using Microsoft.AspNetCore.Http;
 using System.Text.RegularExpressions;
 
 namespace Brittany_Salon_Backend.Application.Validators
 {
     public static partial class EmployeeValidator
     {
-        // Tamaño máximo de imagen: 5MB en Base64 (aproximadamente 6.67MB en string)
-        private const int MaxImageBase64Length = 7_000_000;
+        // Tamaño máximo de imagen: 5MB
+        private const long MaxImageSize = 5 * 1024 * 1024;
 
-        // Formatos de imagen permitidos
-        private static readonly string[] AllowedImageFormats = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+        // Extensiones de imagen permitidas
+        private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+
+        // Content types permitidos
+        private static readonly string[] AllowedContentTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
 
         /// <summary>
         /// Valida todos los campos del DTO de creación de empleado
@@ -34,9 +38,9 @@ namespace Brittany_Salon_Backend.Application.Validators
             errors.AddRange(ValidateSpecialty(dto.Specialty));
 
             // Validar Imagen (si se proporciona)
-            if (!string.IsNullOrWhiteSpace(dto.ImageBase64))
+            if (dto.Image != null)
             {
-                errors.AddRange(ValidateImageBase64(dto.ImageBase64));
+                errors.AddRange(ValidateImageFile(dto.Image));
             }
 
             return errors;
@@ -197,43 +201,27 @@ namespace Brittany_Salon_Backend.Application.Validators
         }
 
         /// <summary>
-        /// Valida la imagen en Base64
+        /// Valida el archivo de imagen (IFormFile)
         /// </summary>
-        public static List<string> ValidateImageBase64(string imageBase64)
+        public static List<string> ValidateImageFile(IFormFile? file)
         {
             var errors = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(imageBase64))
-                return errors;
+            if (file == null || file.Length == 0)
+                return errors; // Imagen es opcional
 
             // Validar tamaño
-            if (imageBase64.Length > MaxImageBase64Length)
+            if (file.Length > MaxImageSize)
                 errors.Add("La imagen no puede exceder 5MB.");
 
-            // Validar formato
-            if (imageBase64.Contains(','))
-            {
-                var header = imageBase64.Split(',')[0];
-                var isValidFormat = AllowedImageFormats.Any(format => header.Contains(format));
-                
-                if (!isValidFormat)
-                    errors.Add("El formato de imagen no es válido. Formatos permitidos: JPEG, PNG, GIF, WebP.");
-            }
+            // Validar extensión
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+                errors.Add($"Extensión de archivo no permitida. Formatos válidos: {string.Join(", ", AllowedExtensions)}");
 
-            // Validar que sea Base64 válido
-            try
-            {
-                var base64Data = imageBase64.Contains(',') 
-                    ? imageBase64.Split(',')[1] 
-                    : imageBase64;
-
-                // Intentar decodificar una porción pequeña para validar
-                Convert.FromBase64String(base64Data.Length > 100 ? base64Data[..100] + "==" : base64Data);
-            }
-            catch
-            {
-                errors.Add("El contenido de la imagen no es un Base64 válido.");
-            }
+            // Validar content type
+            if (!AllowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
+                errors.Add($"Tipo de contenido no permitido. Tipos válidos: JPEG, PNG, GIF, WebP");
 
             return errors;
         }

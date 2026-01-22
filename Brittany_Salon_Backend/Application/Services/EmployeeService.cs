@@ -5,6 +5,7 @@ using Brittany_Salon_Backend.Application.Validators;
 using Brittany_Salon_Backend.Domain.Entities;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brittany_Salon_Backend.Application.Services
@@ -50,9 +51,9 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
 
             // Paso 5: Procesar imagen si se proporcionó
-            if (!string.IsNullOrWhiteSpace(dto.ImageBase64))
+            if (dto.Image != null && dto.Image.Length > 0)
             {
-                await ProcessEmployeeImageAsync(entity, dto.ImageBase64);
+                await ProcessEmployeeImageAsync(entity, dto.Image);
             }
 
             // Paso 6: Retornar DTO de respuesta
@@ -82,8 +83,8 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             var trimmed = name.Trim();
             var words = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            
-            var normalized = words.Select(word => 
+
+            var normalized = words.Select(word =>
                 char.ToUpper(word[0]) + word[1..].ToLower()
             );
 
@@ -91,20 +92,18 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
-        /// Procesa y guarda la imagen del empleado
+        /// Procesa y guarda la imagen del empleado (IFormFile)
         /// </summary>
-        private async Task ProcessEmployeeImageAsync(Employee entity, string imageBase64)
+        private async Task ProcessEmployeeImageAsync(Employee entity, IFormFile imageFile)
         {
             try
             {
-                string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(imageBase64, entity.Id);
+                string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(imageFile, entity.Id);
                 entity.Image = imageUrl;
                 await _db.SaveChangesAsync();
             }
             catch (ArgumentException ex)
             {
-                // Log del error pero no fallar el registro completo
-                // En producción: _logger.LogWarning(ex, "Error al procesar imagen para empleado {Id}", entity.Id);
                 throw new ValidationException($"Error al procesar la imagen: {ex.Message}");
             }
         }

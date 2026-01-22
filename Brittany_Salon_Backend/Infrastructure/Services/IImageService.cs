@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Brittany_Salon_Backend.Infrastructure.Services
 {
     public interface IImageService
@@ -5,10 +7,10 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
         /// <summary>
         /// Procesa y guarda una imagen de empleado, convirtiéndola a WebP
         /// </summary>
-        /// <param name="base64Image">Imagen en formato Base64</param>
+        /// <param name="imageFile">Archivo de imagen (IFormFile)</param>
         /// <param name="employeeId">ID del empleado para generar nombre único</param>
         /// <returns>URL relativa de la imagen guardada</returns>
-        Task<string> ProcessAndSaveEmployeeImageAsync(string base64Image, int employeeId);
+        Task<string> ProcessAndSaveEmployeeImageAsync(IFormFile imageFile, int employeeId);
 
         /// <summary>
         /// Elimina una imagen de empleado del sistema de archivos

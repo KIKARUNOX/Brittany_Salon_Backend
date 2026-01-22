@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace Brittany_Salon_Backend.Application.DTOs.Employee
@@ -24,11 +25,11 @@ namespace Brittany_Salon_Backend.Application.DTOs.Employee
         public string Password { get; set; } = string.Empty;
 
         /// <summary>
-        /// Imagen en formato Base64 (data:image/png;base64,... o solo el contenido Base64)
+        /// Archivo de imagen (multipart/form-data)
         /// Tamaño máximo: 5MB
         /// Formatos permitidos: JPEG, PNG, GIF, WebP
         /// </summary>
-        public string? ImageBase64 { get; set; }
+        public IFormFile? Image { get; set; }
 
         [MaxLength(100, ErrorMessage = "La especialidad no puede exceder 100 caracteres.")]
         public string? Specialty { get; set; }
