@@ -23,7 +23,6 @@
     <Folder Include="Infrastructure\Services\" />
     <Folder Include="Infrastructure\Repositories\" />
     <Folder Include="Infrastructure\Persistence\Configurations\" />
-    <Folder Include="Infrastructure\Persistence\Migrations\" />
     <Folder Include="public\imageUser\" />
   </ItemGroup>
 
