@@ -1,14 +1,9 @@
-﻿using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Brittany_Salon_Backend.Domain.Entities
+namespace Brittany_Salon_Backend.Application.DTOs.Employee
 {
-    public class User
+    public class EmployeeCreateDto
     {
-        [Key]
-        public int Id { get; set; }
-
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
@@ -17,6 +12,7 @@ namespace Brittany_Salon_Backend.Domain.Entities
 
         [Required]
         [MaxLength(150)]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
         [Required]
@@ -26,12 +22,9 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [MaxLength(255)]
         public string? Image { get; set; }
 
-        public DateTime DateCreated { get; set; } = DateTime.Now;
+        [MaxLength(100)]
+        public string? Specialty { get; set; }
 
-        public bool IsActive { get; set; } = true;
-
-        public User() { }
+        public bool? IsActive { get; set; } = true;
     }
 }
-
-

@@ -20,10 +20,7 @@
 
   <ItemGroup>
     <Folder Include="Api\Authorization\" />
-    <Folder Include="Api\Controllers\" />
-    <Folder Include="Application\DTOs\" />
     <Folder Include="Application\Validators\" />
-    <Folder Include="Application\Services\" />
     <Folder Include="Domain\Enums\" />
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="Infrastructure\Settings\" />

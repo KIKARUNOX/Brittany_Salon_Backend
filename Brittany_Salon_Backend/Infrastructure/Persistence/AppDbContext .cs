@@ -10,12 +10,13 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Service> Services { get; set; } = null!;
+        public DbSet<Employee> Employees { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Mapeo explícito (por si acaso)
+            // Mapeo explícito para Service
             modelBuilder.Entity<Service>(entity =>
             {
                 entity.ToTable("Service");
@@ -40,6 +41,34 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
 
                 entity.Property(x => x.ServiceType)
                       .HasMaxLength(50);
+
+                entity.Property(x => x.IsActive)
+                      .HasDefaultValue(true);
+            });
+
+            // Mapeo explícito para Employee
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                entity.ToTable("Employee");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Name)
+                      .HasMaxLength(100)
+                      .IsRequired();
+
+                entity.Property(x => x.Email)
+                      .HasMaxLength(150)
+                      .IsRequired();
+
+                entity.Property(x => x.Password)
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(x => x.Image)
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Specialty)
+                      .HasMaxLength(100);
 
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);

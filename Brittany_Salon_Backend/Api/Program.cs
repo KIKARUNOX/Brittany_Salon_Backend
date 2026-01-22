@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options => // Configura EF Core + SQ
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyección de dependencias
+builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyección de dependencias Employee
 
 var app = builder.Build();
 
