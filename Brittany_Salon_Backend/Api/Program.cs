@@ -13,6 +13,17 @@ builder.Services.AddControllers(); // Habilita Controllers
 builder.Services.AddEndpointsApiExplorer(); // Permite descubrir endpoints para Swagger
 builder.Services.AddSwaggerGen(); // Genera Swagger UI
 
+//CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddDbContext<AppDbContext>(options => // Configura EF Core + SQL Server
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -39,6 +50,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection(); // Redirige HTTP -> HTTPS
+
+// Habilita CORS
+app.UseCors("AllowFrontend");
 
 // Habilita acceso a archivos estáticos desde /imageUser
 var publicPath = Path.Combine(builder.Environment.ContentRootPath, "public");
