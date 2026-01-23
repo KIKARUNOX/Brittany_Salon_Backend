@@ -15,9 +15,10 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
         private const int MaxImageHeight = 800;
         private const long MaxBytes = 5 * 1024 * 1024; // 5MB
 
-        private static readonly HashSet<string> AllowedContentTypes = new()
+        // Extensiones permitidas (mas confiable que ContentType)
+        private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            "image/jpeg", "image/png", "image/webp"
+            ".jpg", ".jpeg", ".png", ".gif", ".webp"
         };
 
         public ImageService(IWebHostEnvironment environment)
@@ -28,13 +29,15 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
         public async Task<string> ProcessAndSaveImageAsync(IFormFile imageFile, string category, int entityId)
         {
             if (imageFile == null || imageFile.Length == 0)
-                throw new ArgumentException("El archivo de imagen no es válido.");
+                throw new ArgumentException("El archivo de imagen no es valido.");
 
             if (imageFile.Length > MaxBytes)
-                throw new ArgumentException("La imagen excede el tamaño permitido (5MB).");
+                throw new ArgumentException("La imagen excede el tamano permitido (5MB).");
 
-            if (!AllowedContentTypes.Contains(imageFile.ContentType))
-                throw new ArgumentException("Formato no permitido. Use JPG, PNG o WebP.");
+            // Validar por extension (mas confiable que ContentType)
+            var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+                throw new ArgumentException($"Formato no permitido. Use: {string.Join(", ", AllowedExtensions)}");
 
             // category ej: imageUser, imageService, etc.
             category = category.Trim().Trim('/');
@@ -57,7 +60,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
 
             await image.SaveAsync(filePath, new WebpEncoder { Quality = 75 });
 
-            // URL pública
+            // URL publica
             return $"/{category}/{fileName}";
         }
 
@@ -87,7 +90,5 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
                 return false;
             }
         }
-
-     
     }
 }

@@ -26,7 +26,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
         public async Task<EmployeeReadDto> CreateAsync(EmployeeCreateDto dto)
         {
-            _logger.LogInfo("Iniciando creación de empleado: {Email}", dto.Email);
+            _logger.LogInfo("Iniciando creacion de empleado: {Email}", dto.Email);
 
             // Paso 1: Validaciones de formato y reglas de negocio
             var validationErrors = EmployeeValidator.ValidateCreate(dto, _logger);
@@ -36,17 +36,18 @@ namespace Brittany_Salon_Backend.Application.Services
             // Paso 2: Normalizar datos
             var normalizedEmail = dto.Email.Trim().ToLower();
             var normalizedName = NormalizeName(dto.Name);
+            var normalizedPhone = dto.Phone.Trim();
 
             // Paso 3: Validaciones contra base de datos
-            await ValidateUniqueConstraintsAsync(normalizedEmail, dto.Phone);
+            await ValidateUniqueConstraintsAsync(normalizedEmail, normalizedPhone);
 
             // Paso 4: Crear entidad
             var entity = new Employee
             {
                 Name = normalizedName,
-                Phone = dto.Phone,
+                Phone = normalizedPhone,
                 Email = normalizedEmail,
-                Password = dto.Password, // TODO: En producción, hashear la contraseña
+                Password = dto.Password, // TODO: En produccion, hashear la contrasena
                 Specialty = dto.Specialty?.Trim(),
                 IsActive = dto.IsActive ?? true,
                 DateCreated = DateTime.Now
@@ -55,7 +56,7 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Employees.Add(entity);
             await _db.SaveChangesAsync();
 
-            // Paso 5: Procesar imagen si se proporcionó
+            // Paso 5: Procesar imagen si se proporciono
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessEmployeeImageAsync(entity, dto.Image);
@@ -66,19 +67,19 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
-        /// Valida que no existan duplicados en email y teléfono
+        /// Valida que no existan duplicados en email y telefono
         /// </summary>
-        private async Task ValidateUniqueConstraintsAsync(string email, int phone)
+        private async Task ValidateUniqueConstraintsAsync(string email, string phone)
         {
             // Verificar email duplicado
             var emailExists = await _db.Employees.AnyAsync(x => x.Email == email);
             if (emailExists)
-                throw new DuplicateResourceException("Email", "Ya existe un empleado registrado con este correo electrónico.");
+                throw new DuplicateResourceException("Email", "Ya existe un empleado registrado con este correo electronico.");
 
-            // Verificar teléfono duplicado
+            // Verificar telefono duplicado
             var phoneExists = await _db.Employees.AnyAsync(x => x.Phone == phone);
             if (phoneExists)
-                throw new DuplicateResourceException("Phone", "Ya existe un empleado registrado con este número de teléfono.");
+                throw new DuplicateResourceException("Phone", "Ya existe un empleado registrado con este numero de telefono.");
         }
 
         /// <summary>
@@ -103,8 +104,8 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             try
             {
-           //     string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(imageFile, entity.Id);
-            //    entity.Image = imageUrl;
+                string imageUrl = await _imageService.ProcessAndSaveImageAsync(imageFile, "imageUser", entity.Id);
+                entity.Image = imageUrl;
                 await _db.SaveChangesAsync();
             }
             catch (ArgumentException ex)

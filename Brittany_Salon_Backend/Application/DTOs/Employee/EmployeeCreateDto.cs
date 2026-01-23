@@ -10,23 +10,23 @@ namespace Brittany_Salon_Backend.Application.DTOs.Employee
         [MaxLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres.")]
         public string Name { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El teléfono es obligatorio.")]
-        [Range(10000000, 99999999, ErrorMessage = "El teléfono debe tener 8 dígitos.")]
-        public int Phone { get; set; }
+        [Required(ErrorMessage = "El telefono es obligatorio.")]
+        [RegularExpression(@"^\d{8}$", ErrorMessage = "El telefono debe tener 8 digitos.")]
+        public string Phone { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
+        [Required(ErrorMessage = "El correo electronico es obligatorio.")]
         [MaxLength(150, ErrorMessage = "El correo no puede exceder 150 caracteres.")]
-        [EmailAddress(ErrorMessage = "El formato del correo electrónico no es válido.")]
+        [EmailAddress(ErrorMessage = "El formato del correo electronico no es valido.")]
         public string Email { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "La contraseña es obligatoria.")]
-        [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres.")]
-        [MaxLength(255, ErrorMessage = "La contraseña no puede exceder 255 caracteres.")]
+        [Required(ErrorMessage = "La contrasena es obligatoria.")]
+        [MinLength(8, ErrorMessage = "La contrasena debe tener al menos 8 caracteres.")]
+        [MaxLength(255, ErrorMessage = "La contrasena no puede exceder 255 caracteres.")]
         public string Password { get; set; } = string.Empty;
 
         /// <summary>
         /// Archivo de imagen (multipart/form-data)
-        /// Tamaño máximo: 5MB
+        /// Tamano maximo: 5MB
         /// Formatos permitidos: JPEG, PNG, GIF, WebP
         /// </summary>
         public IFormFile? Image { get; set; }
