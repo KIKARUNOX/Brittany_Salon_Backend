@@ -10,13 +10,15 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
         /// <param name="imageFile">Archivo de imagen (IFormFile)</param>
         /// <param name="employeeId">ID del empleado para generar nombre único</param>
         /// <returns>URL relativa de la imagen guardada</returns>
-        Task<string> ProcessAndSaveEmployeeImageAsync(IFormFile imageFile, int employeeId);
-
+        Task<string> ProcessAndSaveImageAsync(IFormFile imageFile, string category, int entityId);
         /// <summary>
         /// Elimina una imagen de empleado del sistema de archivos
         /// </summary>
         /// <param name="imageUrl">URL relativa de la imagen a eliminar</param>
         /// <returns>True si se eliminó correctamente</returns>
-        bool DeleteEmployeeImage(string imageUrl);
+        bool DeleteImage(string imageUrl);
+
+   
+
     }
 }

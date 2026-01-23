@@ -103,8 +103,8 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             try
             {
-                string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(imageFile, entity.Id);
-                entity.Image = imageUrl;
+           //     string imageUrl = await _imageService.ProcessAndSaveEmployeeImageAsync(imageFile, entity.Id);
+            //    entity.Image = imageUrl;
                 await _db.SaveChangesAsync();
             }
             catch (ArgumentException ex)

@@ -9,58 +9,70 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
     public class ImageService : IImageService
     {
         private readonly IWebHostEnvironment _environment;
-        private const string ImageFolder = "public/imageUser";
+
+        private const string PublicFolder = "public";
         private const int MaxImageWidth = 800;
         private const int MaxImageHeight = 800;
+        private const long MaxBytes = 5 * 1024 * 1024; // 5MB
+
+        private static readonly HashSet<string> AllowedContentTypes = new()
+        {
+            "image/jpeg", "image/png", "image/webp"
+        };
 
         public ImageService(IWebHostEnvironment environment)
         {
             _environment = environment;
         }
 
-        public async Task<string> ProcessAndSaveEmployeeImageAsync(IFormFile imageFile, int employeeId)
+        public async Task<string> ProcessAndSaveImageAsync(IFormFile imageFile, string category, int entityId)
         {
             if (imageFile == null || imageFile.Length == 0)
                 throw new ArgumentException("El archivo de imagen no es válido.");
 
-            // Crear directorio si no existe
-            var imageDirectory = Path.Combine(_environment.ContentRootPath, ImageFolder);
-            if (!Directory.Exists(imageDirectory))
-                Directory.CreateDirectory(imageDirectory);
+            if (imageFile.Length > MaxBytes)
+                throw new ArgumentException("La imagen excede el tamaño permitido (5MB).");
 
-            // Generar nombre único para la imagen
-            var fileName = $"employee_{employeeId}_{DateTime.Now:yyyyMMddHHmmss}.webp";
-            var filePath = Path.Combine(imageDirectory, fileName);
+            if (!AllowedContentTypes.Contains(imageFile.ContentType))
+                throw new ArgumentException("Formato no permitido. Use JPG, PNG o WebP.");
 
-            // Procesar y guardar la imagen como WebP
-            using (var inputStream = imageFile.OpenReadStream())
-            using (var image = await Image.LoadAsync(inputStream))
+            // category ej: imageUser, imageService, etc.
+            category = category.Trim().Trim('/');
+
+            var categoryDirectory = Path.Combine(_environment.ContentRootPath, PublicFolder, category);
+            if (!Directory.Exists(categoryDirectory))
+                Directory.CreateDirectory(categoryDirectory);
+
+            var fileName = $"{category}_{entityId}_{Guid.NewGuid():N}.webp";
+            var filePath = Path.Combine(categoryDirectory, fileName);
+
+            using var inputStream = imageFile.OpenReadStream();
+            using var image = await Image.LoadAsync(inputStream);
+
+            image.Mutate(x => x.Resize(new ResizeOptions
             {
-                // Redimensionar si es necesario
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Size = new Size(MaxImageWidth, MaxImageHeight),
-                    Mode = ResizeMode.Max
-                }));
+                Size = new Size(MaxImageWidth, MaxImageHeight),
+                Mode = ResizeMode.Max
+            }));
 
-                // Guardar como WebP
-                await image.SaveAsync(filePath, new WebpEncoder());
-            }
+            await image.SaveAsync(filePath, new WebpEncoder { Quality = 75 });
 
-            // Retornar URL relativa
-            return $"/imageUser/{fileName}";
+            // URL pública
+            return $"/{category}/{fileName}";
         }
 
-        public bool DeleteEmployeeImage(string imageUrl)
+        public bool DeleteImage(string imageUrl)
         {
-            if (string.IsNullOrEmpty(imageUrl))
+            if (string.IsNullOrWhiteSpace(imageUrl))
                 return false;
 
             try
             {
-                // Extraer nombre del archivo de la URL
-                var fileName = Path.GetFileName(imageUrl);
-                var filePath = Path.Combine(_environment.ContentRootPath, ImageFolder, fileName);
+                // Ej: /imageUser/xxx.webp
+                var clean = imageUrl.Split('?')[0].Trim();
+                clean = clean.TrimStart('/');
+
+                var filePath = Path.Combine(_environment.ContentRootPath, PublicFolder, clean);
 
                 if (File.Exists(filePath))
                 {
@@ -75,5 +87,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
                 return false;
             }
         }
+
+     
     }
 }

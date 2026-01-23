@@ -1,6 +1,8 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Service;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Brittany_Salon_Backend.Infrastructure.Services;
+
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
@@ -9,10 +11,13 @@ namespace Brittany_Salon_Backend.Api.Controllers
     public class ServicesController : ControllerBase
     {
         private readonly IServiceService _serviceService;
+        private readonly IImageService _imageService;
 
-        public ServicesController(IServiceService serviceService)
+
+        public ServicesController(IServiceService serviceService, IImageService imageService)
         {
             _serviceService = serviceService;
+            _imageService = imageService;
         }
 
         // GET: api/services?onlyActive=true
@@ -33,21 +38,34 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok(result);
         }
 
-        // POST: api/services
+        // POST: api/services  (FormData + imagen opcional)
         [HttpPost]
-        public async Task<ActionResult<ServiceReadDto>> Create([FromBody] ServiceCreateDto dto)
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(10_000_000)]
+        public async Task<ActionResult<ServiceReadDto>> Create([FromForm] ServiceCreateDto dto)
         {
             try
             {
+                // 1) Crear servicio (sin imagen por ahora)
                 var created = await _serviceService.CreateAsync(dto);
-                return CreatedAtAction(nameof(GetById), new { id = created.ServiceId }, created);
+
+                // 2) Si viene imagen, guardarla y guardar URL en BD
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    var url = await _imageService.ProcessAndSaveImageAsync(dto.Image, "imageService", created.ServiceId);
+                    await _serviceService.UpdateImageUrlAsync(created.ServiceId, url);
+                }
+
+                // 3) Devolver el servicio ya con ImageUrl
+                var updated = await _serviceService.GetByIdAsync(created.ServiceId);
+                return CreatedAtAction(nameof(GetById), new { id = created.ServiceId }, updated ?? created);
             }
             catch (InvalidOperationException ex)
             {
-                // Ej: nombre repetido
                 return Conflict(ex.Message);
             }
         }
+
 
         // PUT: api/services/5
         [HttpPut("{id:int}")]
