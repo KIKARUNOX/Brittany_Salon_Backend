@@ -22,6 +22,16 @@ Accept: application/json
 
 ###
 
+### Desactivar empleado (eliminacion logica)
+PATCH {{Brittany_Salon_Backend_HostAddress}}/api/employees/1/deactivate
+
+###
+
+### Reactivar empleado
+PATCH {{Brittany_Salon_Backend_HostAddress}}/api/employees/1/reactivate
+
+###
+
 ### NOTA: Para crear/editar empleados usar Bruno o Swagger (multipart/form-data)
 ###
 ### POST /api/employees (Crear):

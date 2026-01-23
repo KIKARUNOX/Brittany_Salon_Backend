@@ -27,5 +27,19 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         /// <param name="dto">Datos a actualizar (solo los campos proporcionados)</param>
         /// <returns>True si se actualizo, False si no existe</returns>
         Task<bool> UpdateAsync(int id, EmployeeUpdateDto dto);
+
+        /// <summary>
+        /// Desactiva un empleado (eliminacion logica)
+        /// </summary>
+        /// <param name="id">ID del empleado a desactivar</param>
+        /// <returns>True si se desactivo, False si no existe</returns>
+        Task<bool> DeactivateAsync(int id);
+
+        /// <summary>
+        /// Reactiva un empleado previamente desactivado
+        /// </summary>
+        /// <param name="id">ID del empleado a reactivar</param>
+        /// <returns>True si se reactivo, False si no existe</returns>
+        Task<bool> ReactivateAsync(int id);
     }
 }

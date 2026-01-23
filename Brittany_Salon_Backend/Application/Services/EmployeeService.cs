@@ -173,6 +173,60 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
+        /// Desactiva un empleado (eliminacion logica)
+        /// </summary>
+        public async Task<bool> DeactivateAsync(int id)
+        {
+            _logger.LogInfo("Desactivando empleado ID: {Id}", id);
+
+            var entity = await _db.Employees.FindAsync(id);
+            if (entity == null)
+            {
+                _logger.LogWarning("Empleado con ID {Id} no encontrado", id);
+                return false;
+            }
+
+            if (!entity.IsActive)
+            {
+                _logger.LogInfo("Empleado ID {Id} ya estaba desactivado", id);
+                return true; // Ya esta desactivado, consideramos exito
+            }
+
+            entity.IsActive = false;
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Empleado ID {Id} desactivado exitosamente", id);
+            return true;
+        }
+
+        /// <summary>
+        /// Reactiva un empleado previamente desactivado
+        /// </summary>
+        public async Task<bool> ReactivateAsync(int id)
+        {
+            _logger.LogInfo("Reactivando empleado ID: {Id}", id);
+
+            var entity = await _db.Employees.FindAsync(id);
+            if (entity == null)
+            {
+                _logger.LogWarning("Empleado con ID {Id} no encontrado", id);
+                return false;
+            }
+
+            if (entity.IsActive)
+            {
+                _logger.LogInfo("Empleado ID {Id} ya estaba activo", id);
+                return true; // Ya esta activo, consideramos exito
+            }
+
+            entity.IsActive = true;
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Empleado ID {Id} reactivado exitosamente", id);
+            return true;
+        }
+
+        /// <summary>
         /// Valida que no existan duplicados en email y telefono
         /// </summary>
         private async Task ValidateUniqueConstraintsAsync(string email, string phone)

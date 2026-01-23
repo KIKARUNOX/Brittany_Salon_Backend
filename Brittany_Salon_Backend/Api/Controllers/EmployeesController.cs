@@ -132,6 +132,46 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Desactiva un empleado (eliminacion logica)
+        /// </summary>
+        /// <param name="id">ID del empleado a desactivar</param>
+        /// <returns>NoContent si se desactivo correctamente</returns>
+        /// <response code="204">Empleado desactivado exitosamente</response>
+        /// <response code="404">Empleado no encontrado</response>
+        [HttpPatch("{id:int}/deactivate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Deactivate(int id)
+        {
+            var result = await _employeeService.DeactivateAsync(id);
+            
+            if (!result)
+                return NotFound(new ErrorResponse { Message = "Empleado no encontrado." });
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Reactiva un empleado previamente desactivado
+        /// </summary>
+        /// <param name="id">ID del empleado a reactivar</param>
+        /// <returns>NoContent si se reactivo correctamente</returns>
+        /// <response code="204">Empleado reactivado exitosamente</response>
+        /// <response code="404">Empleado no encontrado</response>
+        [HttpPatch("{id:int}/reactivate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            var result = await _employeeService.ReactivateAsync(id);
+            
+            if (!result)
+                return NotFound(new ErrorResponse { Message = "Empleado no encontrado." });
+
+            return NoContent();
+        }
     }
 
     /// <summary>
@@ -142,6 +182,8 @@ namespace Brittany_Salon_Backend.Api.Controllers
         public string Message { get; set; } = string.Empty;
         public List<string> Errors { get; set; } = [];
     }
+
+
 
 
 
