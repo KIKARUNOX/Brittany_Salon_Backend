@@ -1,6 +1,38 @@
 @Brittany_Salon_Backend_HostAddress = http://localhost:5268
 
 ### ============================================
+### EMPLEADOS (Employees)
+### ============================================
+
+### Obtener todos los empleados
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees
+Accept: application/json
+
+###
+
+### Obtener solo empleados activos
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees?onlyActive=true
+Accept: application/json
+
+###
+
+### Obtener empleado por ID
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees/1
+Accept: application/json
+
+###
+
+### NOTA: Para crear empleados usar Bruno o Swagger (multipart/form-data)
+### POST /api/employees requiere:
+### - Name: string
+### - Phone: string (8 digitos)
+### - Email: string
+### - Password: string (min 8 chars, mayuscula, minuscula, numero, especial)
+### - Specialty: string (opcional)
+### - IsActive: bool (opcional, default true)
+### - Image: File (opcional, .jpg/.png/.webp)
+
+### ============================================
 ### SERVICIOS (Services)
 ### ============================================
 

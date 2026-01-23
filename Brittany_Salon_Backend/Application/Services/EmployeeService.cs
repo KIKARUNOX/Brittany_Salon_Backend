@@ -24,6 +24,48 @@ namespace Brittany_Salon_Backend.Application.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Obtiene todos los empleados
+        /// </summary>
+        public async Task<List<EmployeeReadDto>> GetAllAsync(bool onlyActive = false)
+        {
+            _logger.LogInfo("Obteniendo empleados. Solo activos: {OnlyActive}", onlyActive);
+
+            var query = _db.Employees.AsNoTracking();
+
+            if (onlyActive)
+                query = query.Where(e => e.IsActive);
+
+            var employees = await query
+                .OrderBy(e => e.Name)
+                .Select(e => MapToReadDto(e))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} empleados", employees.Count);
+            return employees;
+        }
+
+        /// <summary>
+        /// Obtiene un empleado por su ID
+        /// </summary>
+        public async Task<EmployeeReadDto?> GetByIdAsync(int id)
+        {
+            _logger.LogInfo("Buscando empleado con ID: {Id}", id);
+
+            var employee = await _db.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (employee == null)
+            {
+                _logger.LogWarning("Empleado con ID {Id} no encontrado", id);
+                return null;
+            }
+
+            _logger.LogInfo("Empleado encontrado: {Name}", employee.Name);
+            return MapToReadDto(employee);
+        }
+
         public async Task<EmployeeReadDto> CreateAsync(EmployeeCreateDto dto)
         {
             _logger.LogInfo("Iniciando creacion de empleado: {Email}", dto.Email);
