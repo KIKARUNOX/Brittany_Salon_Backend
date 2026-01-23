@@ -48,11 +48,59 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (errors.Count > 0)
             {
-                logger?.LogWarning("Validación fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+                logger?.LogWarning("Validacion fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
             }
             else
             {
-                logger?.LogInfo("Validación exitosa para empleado: {Email}", dto.Email);
+                logger?.LogInfo("Validacion exitosa para empleado: {Email}", dto.Email);
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Valida los campos del DTO de actualizacion de empleado
+        /// Solo valida los campos que se proporcionan (no null)
+        /// </summary>
+        public static List<string> ValidateUpdate(EmployeeUpdateDto dto, IDevLogger? logger = null)
+        {
+            var errors = new List<string>();
+
+            logger?.LogDebug("Iniciando validacion de actualizacion de empleado...");
+
+            // Validar Nombre (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+                errors.AddRange(ValidateName(dto.Name));
+
+            // Validar Email (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+                errors.AddRange(ValidateEmail(dto.Email));
+
+            // Validar Telefono (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Phone))
+                errors.AddRange(ValidatePhone(dto.Phone));
+
+            // Validar Contrasena (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+                errors.AddRange(ValidatePassword(dto.Password));
+
+            // Validar Especialidad (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Specialty))
+                errors.AddRange(ValidateSpecialty(dto.Specialty));
+
+            // Validar Imagen (si se proporciona)
+            if (dto.Image != null)
+            {
+                errors.AddRange(ValidateImageFile(dto.Image, logger));
+            }
+
+            if (errors.Count > 0)
+            {
+                logger?.LogWarning("Validacion de update fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+            }
+            else
+            {
+                logger?.LogInfo("Validacion de update exitosa");
             }
 
             return errors;
@@ -124,27 +172,30 @@ namespace Brittany_Salon_Backend.Application.Validators
         /// <summary>
         /// Valida el número de teléfono
         /// </summary>
-        public static List<string> ValidatePhone(int phone)
+        public static List<string> ValidatePhone(string? phone)
         {
             var errors = new List<string>();
 
-            if (phone <= 0)
+            if (string.IsNullOrWhiteSpace(phone))
             {
-                errors.Add("El número de teléfono es obligatorio.");
+                errors.Add("El numero de telefono es obligatorio.");
                 return errors;
             }
 
-            var phoneString = phone.ToString();
+            var phoneString = phone.Trim();
 
-            // Teléfono de Costa Rica: 8 dígitos
-            if (phoneString.Length != 8)
-                errors.Add("El número de teléfono debe tener exactamente 8 dígitos.");
+            // Telefono de Costa Rica: 8 digitos
+            if (phoneString.Length != 8 || !phoneString.All(char.IsDigit))
+            {
+                errors.Add("El numero de telefono debe tener exactamente 8 digitos.");
+                return errors;
+            }
 
-            // Debe comenzar con 2, 4, 5, 6, 7 u 8 (prefijos válidos en CR)
+            // Debe comenzar con 2, 4, 5, 6, 7 u 8 (prefijos validos en CR)
             char firstDigit = phoneString[0];
             char[] validPrefixes = ['2', '4', '5', '6', '7', '8'];
             if (!validPrefixes.Contains(firstDigit))
-                errors.Add("El número de teléfono debe comenzar con 2, 4, 5, 6, 7 u 8.");
+                errors.Add("El numero de telefono debe comenzar con 2, 4, 5, 6, 7 u 8.");
 
             return errors;
         }
@@ -222,57 +273,58 @@ namespace Brittany_Salon_Backend.Application.Validators
             if (file == null || file.Length == 0)
                 return errors; // Imagen es opcional
 
-            // LOG: Información detallada del archivo recibido
-            logger?.LogDebug("========== VALIDACIÓN DE IMAGEN ==========");
+            // LOG: Informacion detallada del archivo recibido
+            logger?.LogDebug("========== VALIDACION DE IMAGEN ==========");
             logger?.LogDebug("FileName: {FileName}", file.FileName);
             logger?.LogDebug("ContentType recibido: '{ContentType}'", file.ContentType);
-            logger?.LogDebug("Tamaño: {Size} bytes ({SizeMB:F2} MB)", file.Length, file.Length / 1024.0 / 1024.0);
-            logger?.LogDebug("ContentDisposition: {CD}", file.ContentDisposition);
+            logger?.LogDebug("Tamano: {Size} bytes ({SizeMB:F2} MB)", file.Length, file.Length / 1024.0 / 1024.0);
 
-            // Validar tamaño
+            // Validar tamano
             if (file.Length > MaxImageSize)
             {
-                logger?.LogWarning("Imagen excede tamaño máximo: {Size} > {Max}", file.Length, MaxImageSize);
+                logger?.LogWarning("Imagen excede tamano maximo: {Size} > {Max}", file.Length, MaxImageSize);
                 errors.Add("La imagen no puede exceder 5MB.");
             }
 
-            // Validar extensión (más confiable que ContentType)
+            // Validar extension (MAS CONFIABLE que ContentType)
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            logger?.LogDebug("Extensión extraída: '{Extension}'", extension);
-            logger?.LogDebug("Extensiones permitidas: [{Allowed}]", string.Join(", ", AllowedExtensions));
+            logger?.LogDebug("Extension extraida: '{Extension}'", extension);
             
-            if (!AllowedExtensions.Contains(extension))
+            bool isValidExtension = AllowedExtensions.Contains(extension);
+            
+            if (!isValidExtension)
             {
-                logger?.LogWarning("Extensión no permitida: '{Extension}'", extension);
-                errors.Add($"Extensión de archivo no permitida. Formatos válidos: {string.Join(", ", AllowedExtensions)}");
-            }
-
-            // Validar content type (flexibilizado para diferentes clientes)
-            var contentType = file.ContentType.ToLowerInvariant();
-            logger?.LogDebug("ContentType normalizado: '{ContentType}'", contentType);
-            logger?.LogDebug("ContentTypes permitidos: [{Allowed}]", string.Join(", ", AllowedContentTypes));
-            
-            bool isInAllowedList = AllowedContentTypes.Contains(contentType);
-            bool startsWithImage = contentType.StartsWith("image/");
-            bool isOctetStream = contentType == "application/octet-stream";
-            
-            logger?.LogDebug("¿Está en lista permitida?: {Result}", isInAllowedList);
-            logger?.LogDebug("¿Comienza con 'image/'?: {Result}", startsWithImage);
-            logger?.LogDebug("¿Es octet-stream?: {Result}", isOctetStream);
-            
-            bool isValidContentType = isInAllowedList || startsWithImage || isOctetStream;
-            
-            if (!isValidContentType)
-            {
-                logger?.LogWarning("ContentType NO válido: '{ContentType}' - No cumple ninguna condición", contentType);
-                errors.Add($"Tipo de contenido no permitido: '{file.ContentType}'. Tipos válidos: JPEG, PNG, GIF, WebP");
+                logger?.LogWarning("Extension no permitida: '{Extension}'", extension);
+                errors.Add($"Extension de archivo no permitida. Formatos validos: {string.Join(", ", AllowedExtensions)}");
             }
             else
             {
-                logger?.LogInfo("ContentType válido: '{ContentType}'", contentType);
+                logger?.LogInfo("Extension valida: '{Extension}'", extension);
             }
 
-            logger?.LogDebug("========== FIN VALIDACIÓN DE IMAGEN ==========");
+            // ContentType: Solo loguear, NO bloquear si la extension es valida
+            // Algunos clientes (Bruno, Postman, etc.) envian ContentType incorrecto
+            var contentType = file.ContentType.ToLowerInvariant();
+            bool isValidContentType = AllowedContentTypes.Contains(contentType) 
+                || contentType.StartsWith("image/")
+                || contentType == "application/octet-stream";
+            
+            if (!isValidContentType && isValidExtension)
+            {
+                // Extension valida pero ContentType raro - aceptamos pero logueamos advertencia
+                logger?.LogWarning("ContentType '{ContentType}' no estandar, pero extension '{Extension}' es valida. Aceptado.", contentType, extension);
+            }
+            else if (!isValidContentType && !isValidExtension)
+            {
+                // Ambos invalidos - ya se agrego error por extension
+                logger?.LogWarning("ContentType y extension invalidos");
+            }
+            else
+            {
+                logger?.LogInfo("Imagen valida: extension='{Extension}', contentType='{ContentType}'", extension, contentType);
+            }
+
+            logger?.LogDebug("========== FIN VALIDACION DE IMAGEN ==========");
 
             return errors;
         }

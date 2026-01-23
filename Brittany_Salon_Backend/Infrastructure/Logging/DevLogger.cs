@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Brittany_Salon_Backend.Infrastructure.Logging
 {
     /// <summary>
-    /// Implementación del logger para desarrollo
-    /// Solo loggea cuando está en ambiente de desarrollo
+    /// Implementacion del logger para desarrollo
+    /// Solo loggea cuando esta en ambiente de desarrollo
     /// </summary>
     public class DevLogger : IDevLogger
     {
@@ -30,7 +30,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Logging
         public void LogWarning(string message, params object[] args)
         {
             if (!_isEnabled) return;
-            _logger.LogWarning($"[DEV] ?? {message}", args);
+            _logger.LogWarning($"[DEV][WARN] {message}", args);
         }
 
         public void LogError(string message, Exception? exception = null, params object[] args)
@@ -38,15 +38,15 @@ namespace Brittany_Salon_Backend.Infrastructure.Logging
             if (!_isEnabled) return;
             
             if (exception != null)
-                _logger.LogError(exception, $"[DEV] ? {message}", args);
+                _logger.LogError(exception, $"[DEV][ERROR] {message}", args);
             else
-                _logger.LogError($"[DEV] ? {message}", args);
+                _logger.LogError($"[DEV][ERROR] {message}", args);
         }
 
         public void LogDebug(string message, params object[] args)
         {
             if (!_isEnabled) return;
-            _logger.LogDebug($"[DEV] ?? {message}", args);
+            _logger.LogDebug($"[DEV][DEBUG] {message}", args);
         }
 
         public void LogValidation(string context, object? data)
@@ -66,7 +66,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Logging
                     : "null";
 
                 _logger.LogInformation(
-                    "[DEV] ?? Validación [{Context}]:\n{Data}", 
+                    "[DEV][VALIDATION] [{Context}]:\n{Data}", 
                     context, 
                     dataJson
                 );
@@ -74,7 +74,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Logging
             catch (Exception ex)
             {
                 _logger.LogWarning(
-                    "[DEV] No se pudo serializar datos de validación: {Error}", 
+                    "[DEV] No se pudo serializar datos de validacion: {Error}", 
                     ex.Message
                 );
             }
