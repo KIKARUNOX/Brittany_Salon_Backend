@@ -107,7 +107,6 @@ namespace Brittany_Salon_Backend.Application.Services
             entity.ServiceDescription = dto.ServiceDescription?.Trim();
             entity.Price = dto.Price;
             entity.DurationMinutes = dto.DurationMinutes;
-            entity.ImageUrl = dto.ImageUrl?.Trim();
             entity.ServiceType = dto.ServiceType?.Trim();
             entity.IsActive = dto.IsActive;
 
