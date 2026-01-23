@@ -48,11 +48,59 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (errors.Count > 0)
             {
-                logger?.LogWarning("Validación fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+                logger?.LogWarning("Validacion fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
             }
             else
             {
-                logger?.LogInfo("Validación exitosa para empleado: {Email}", dto.Email);
+                logger?.LogInfo("Validacion exitosa para empleado: {Email}", dto.Email);
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Valida los campos del DTO de actualizacion de empleado
+        /// Solo valida los campos que se proporcionan (no null)
+        /// </summary>
+        public static List<string> ValidateUpdate(EmployeeUpdateDto dto, IDevLogger? logger = null)
+        {
+            var errors = new List<string>();
+
+            logger?.LogDebug("Iniciando validacion de actualizacion de empleado...");
+
+            // Validar Nombre (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+                errors.AddRange(ValidateName(dto.Name));
+
+            // Validar Email (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+                errors.AddRange(ValidateEmail(dto.Email));
+
+            // Validar Telefono (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Phone))
+                errors.AddRange(ValidatePhone(dto.Phone));
+
+            // Validar Contrasena (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+                errors.AddRange(ValidatePassword(dto.Password));
+
+            // Validar Especialidad (si se proporciona)
+            if (!string.IsNullOrWhiteSpace(dto.Specialty))
+                errors.AddRange(ValidateSpecialty(dto.Specialty));
+
+            // Validar Imagen (si se proporciona)
+            if (dto.Image != null)
+            {
+                errors.AddRange(ValidateImageFile(dto.Image, logger));
+            }
+
+            if (errors.Count > 0)
+            {
+                logger?.LogWarning("Validacion de update fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+            }
+            else
+            {
+                logger?.LogInfo("Validacion de update exitosa");
             }
 
             return errors;

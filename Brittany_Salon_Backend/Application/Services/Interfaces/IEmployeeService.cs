@@ -19,5 +19,13 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         /// Crea un nuevo empleado
         /// </summary>
         Task<EmployeeReadDto> CreateAsync(EmployeeCreateDto dto);
+
+        /// <summary>
+        /// Actualiza un empleado existente
+        /// </summary>
+        /// <param name="id">ID del empleado a actualizar</param>
+        /// <param name="dto">Datos a actualizar (solo los campos proporcionados)</param>
+        /// <returns>True si se actualizo, False si no existe</returns>
+        Task<bool> UpdateAsync(int id, EmployeeUpdateDto dto);
     }
 }

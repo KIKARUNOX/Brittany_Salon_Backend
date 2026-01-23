@@ -98,6 +98,7 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Employees.Add(entity);
             await _db.SaveChangesAsync();
 
+
             // Paso 5: Procesar imagen si se proporciono
             if (dto.Image != null && dto.Image.Length > 0)
             {
@@ -106,6 +107,69 @@ namespace Brittany_Salon_Backend.Application.Services
 
             // Paso 6: Retornar DTO de respuesta
             return MapToReadDto(entity);
+        }
+
+        /// <summary>
+        /// Actualiza un empleado existente
+        /// </summary>
+        public async Task<bool> UpdateAsync(int id, EmployeeUpdateDto dto)
+        {
+            _logger.LogInfo("Iniciando actualizacion de empleado ID: {Id}", id);
+
+            // Paso 1: Buscar empleado
+            var entity = await _db.Employees.FindAsync(id);
+            if (entity == null)
+            {
+                _logger.LogWarning("Empleado con ID {Id} no encontrado", id);
+                return false;
+            }
+
+            // Paso 2: Validar datos del DTO
+            var validationErrors = EmployeeValidator.ValidateUpdate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
+
+            // Paso 3: Validar unicidad de email/telefono (si se estan actualizando)
+            var newEmail = !string.IsNullOrWhiteSpace(dto.Email) ? dto.Email.Trim().ToLower() : null;
+            var newPhone = !string.IsNullOrWhiteSpace(dto.Phone) ? dto.Phone.Trim() : null;
+            await ValidateUniqueConstraintsForUpdateAsync(id, newEmail, newPhone);
+
+            // Paso 4: Actualizar campos (solo los que se proporcionan)
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+                entity.Name = NormalizeName(dto.Name);
+
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+                entity.Email = newEmail!;
+
+            if (!string.IsNullOrWhiteSpace(dto.Phone))
+                entity.Phone = newPhone!;
+
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+                entity.Password = dto.Password; // TODO: hashear en produccion
+
+            if (!string.IsNullOrWhiteSpace(dto.Specialty))
+                entity.Specialty = dto.Specialty.Trim();
+
+            if (dto.IsActive.HasValue)
+                entity.IsActive = dto.IsActive.Value;
+
+            // Paso 5: Manejar imagen
+            if (dto.RemoveImage)
+            {
+                // Eliminar imagen sin reemplazar
+                RemoveEmployeeImage(entity);
+            }
+            else if (dto.Image != null && dto.Image.Length > 0)
+            {
+                // Actualizar imagen (elimina la anterior y guarda la nueva)
+                await UpdateEmployeeImageAsync(entity, dto.Image);
+            }
+
+            // Paso 6: Guardar cambios
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Empleado ID {Id} actualizado exitosamente", id);
+            return true;
         }
 
         /// <summary>
@@ -122,6 +186,26 @@ namespace Brittany_Salon_Backend.Application.Services
             var phoneExists = await _db.Employees.AnyAsync(x => x.Phone == phone);
             if (phoneExists)
                 throw new DuplicateResourceException("Phone", "Ya existe un empleado registrado con este numero de telefono.");
+        }
+
+        /// <summary>
+        /// Valida que email/telefono no esten duplicados (excluyendo el empleado actual)
+        /// </summary>
+        private async Task ValidateUniqueConstraintsForUpdateAsync(int employeeId, string? email, string? phone)
+        {
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var emailExists = await _db.Employees.AnyAsync(x => x.Email == email && x.Id != employeeId);
+                if (emailExists)
+                    throw new DuplicateResourceException("Email", "Ya existe otro empleado con este correo electronico.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var phoneExists = await _db.Employees.AnyAsync(x => x.Phone == phone && x.Id != employeeId);
+                if (phoneExists)
+                    throw new DuplicateResourceException("Phone", "Ya existe otro empleado con este numero de telefono.");
+            }
         }
 
         /// <summary>
@@ -153,6 +237,44 @@ namespace Brittany_Salon_Backend.Application.Services
             catch (ArgumentException ex)
             {
                 throw new ValidationException($"Error al procesar la imagen: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Actualiza la imagen del empleado (elimina la anterior si existe)
+        /// </summary>
+        private async Task UpdateEmployeeImageAsync(Employee entity, IFormFile newImage)
+        {
+            try
+            {
+                // Eliminar imagen anterior si existe
+                if (!string.IsNullOrWhiteSpace(entity.Image))
+                {
+                    _logger.LogInfo("Eliminando imagen anterior: {Image}", entity.Image);
+                    _imageService.DeleteImage(entity.Image);
+                }
+
+                // Guardar nueva imagen
+                string imageUrl = await _imageService.ProcessAndSaveImageAsync(newImage, "imageUser", entity.Id);
+                entity.Image = imageUrl;
+                _logger.LogInfo("Nueva imagen guardada: {Image}", imageUrl);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ValidationException($"Error al procesar la imagen: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Elimina la imagen del empleado
+        /// </summary>
+        private void RemoveEmployeeImage(Employee entity)
+        {
+            if (!string.IsNullOrWhiteSpace(entity.Image))
+            {
+                _logger.LogInfo("Eliminando imagen del empleado: {Image}", entity.Image);
+                _imageService.DeleteImage(entity.Image);
+                entity.Image = null;
             }
         }
 

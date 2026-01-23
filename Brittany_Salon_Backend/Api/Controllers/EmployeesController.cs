@@ -87,6 +87,51 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Actualiza un empleado existente
+        /// </summary>
+        /// <param name="id">ID del empleado a actualizar</param>
+        /// <param name="dto">Datos a actualizar (solo los campos proporcionados se actualizan)</param>
+        /// <returns>NoContent si se actualizo correctamente</returns>
+        /// <response code="204">Empleado actualizado exitosamente</response>
+        /// <response code="400">Errores de validacion</response>
+        /// <response code="404">Empleado no encontrado</response>
+        /// <response code="409">Email o telefono ya registrado por otro empleado</response>
+        [HttpPut("{id:int}")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ValidationErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> Update(int id, [FromForm] EmployeeUpdateDto dto)
+        {
+            try
+            {
+                var updated = await _employeeService.UpdateAsync(id, dto);
+                
+                if (!updated)
+                    return NotFound(new ErrorResponse { Message = "Empleado no encontrado." });
+
+                return NoContent();
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new ValidationErrorResponse
+                {
+                    Message = "Se encontraron errores de validacion.",
+                    Errors = ex.Errors
+                });
+            }
+            catch (DuplicateResourceException ex)
+            {
+                return Conflict(new ErrorResponse
+                {
+                    Message = ex.Message,
+                    Field = ex.Field
+                });
+            }
+        }
     }
 
     /// <summary>
@@ -97,6 +142,8 @@ namespace Brittany_Salon_Backend.Api.Controllers
         public string Message { get; set; } = string.Empty;
         public List<string> Errors { get; set; } = [];
     }
+
+
 
     /// <summary>
     /// Respuesta estandar para errores generales
