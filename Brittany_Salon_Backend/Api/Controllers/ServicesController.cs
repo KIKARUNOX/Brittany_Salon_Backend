@@ -1,8 +1,6 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Service;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Brittany_Salon_Backend.Infrastructure.Services;
-
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
@@ -11,16 +9,12 @@ namespace Brittany_Salon_Backend.Api.Controllers
     public class ServicesController : ControllerBase
     {
         private readonly IServiceService _serviceService;
-        private readonly IImageService _imageService;
 
-
-        public ServicesController(IServiceService serviceService, IImageService imageService)
+        public ServicesController(IServiceService serviceService)
         {
             _serviceService = serviceService;
-            _imageService = imageService;
         }
 
-        // GET: api/services?onlyActive=true
         [HttpGet]
         public async Task<ActionResult<List<ServiceReadDto>>> GetAll([FromQuery] bool onlyActive = false)
         {
@@ -28,7 +22,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok(result);
         }
 
-        // GET: api/services/5
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ServiceReadDto>> GetById(int id)
         {
@@ -38,7 +31,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok(result);
         }
 
-        // POST: api/services  (FormData + imagen opcional)
         [HttpPost]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(10_000_000)]
@@ -46,19 +38,8 @@ namespace Brittany_Salon_Backend.Api.Controllers
         {
             try
             {
-                // 1) Crear servicio (sin imagen por ahora)
                 var created = await _serviceService.CreateAsync(dto);
-
-                // 2) Si viene imagen, guardarla y guardar URL en BD
-                if (dto.Image != null && dto.Image.Length > 0)
-                {
-                    var url = await _imageService.ProcessAndSaveImageAsync(dto.Image, "imageService", created.ServiceId);
-                    await _serviceService.UpdateImageUrlAsync(created.ServiceId, url);
-                }
-
-                // 3) Devolver el servicio ya con ImageUrl
-                var updated = await _serviceService.GetByIdAsync(created.ServiceId);
-                return CreatedAtAction(nameof(GetById), new { id = created.ServiceId }, updated ?? created);
+                return CreatedAtAction(nameof(GetById), new { id = created.ServiceId }, created);
             }
             catch (InvalidOperationException ex)
             {
@@ -66,8 +47,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-
-        // PUT: api/services/5
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(10_000_000)]
@@ -75,16 +54,8 @@ namespace Brittany_Salon_Backend.Api.Controllers
         {
             try
             {
-                // 1) Actualizar datos normales del servicio
                 var updated = await _serviceService.UpdateAsync(id, dto);
                 if (!updated) return NotFound("Servicio no encontrado.");
-
-                // 2) Si mandaron imagen, guardarla y actualizar el ImageUrl en BD
-                if (dto.Image != null && dto.Image.Length > 0)
-                {
-                    var url = await _imageService.ProcessAndSaveImageAsync(dto.Image, "imageService", id);
-                    await _serviceService.UpdateImageUrlAsync(id, url);
-                }
 
                 return NoContent();
             }
@@ -94,8 +65,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-
-        // PATCH: api/services/5/deactivate
         [HttpPatch("{id:int}/deactivate")]
         public async Task<IActionResult> Deactivate(int id)
         {
@@ -104,5 +73,14 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
             return NoContent();
         }
+        [HttpGet("search")]
+        public async Task<ActionResult<List<ServiceReadDto>>> SearchByName(
+        [FromQuery] string name,
+        [FromQuery] bool onlyActive = false)
+        {
+            var result = await _serviceService.SearchByNameAsync(name, onlyActive);
+            return Ok(result);
+        }
+
     }
 }
