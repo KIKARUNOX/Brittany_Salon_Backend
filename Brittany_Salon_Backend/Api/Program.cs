@@ -55,16 +55,16 @@ app.UseHttpsRedirection(); // Redirige HTTP -> HTTPS
 app.UseCors("AllowFrontend");
 
 // Habilita acceso a archivos estáticos desde /imageUser
-var imageUserPath = Path.Combine(builder.Environment.ContentRootPath, "public", "imageUser");
-if (!Directory.Exists(imageUserPath))
+var publicPath = Path.Combine(builder.Environment.ContentRootPath, "public");
+if (!Directory.Exists(publicPath))
 {
-    Directory.CreateDirectory(imageUserPath);
+    Directory.CreateDirectory(publicPath);
 }
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(imageUserPath),
-    RequestPath = "/imageUser"
+    FileProvider = new PhysicalFileProvider(publicPath),
+    RequestPath = ""
 });
 
 app.MapControllers(); // Mapea rutas de Controllers

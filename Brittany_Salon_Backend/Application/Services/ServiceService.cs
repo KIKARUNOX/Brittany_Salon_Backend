@@ -73,7 +73,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 ServiceDescription = dto.ServiceDescription?.Trim(),
                 Price = dto.Price,
                 DurationMinutes = dto.DurationMinutes,
-                ImageUrl = dto.ImageUrl?.Trim(),
+                ImageUrl = null,
                 ServiceType = dto.ServiceType?.Trim(),
                 IsActive = dto.IsActive ?? true
             };
@@ -107,7 +107,6 @@ namespace Brittany_Salon_Backend.Application.Services
             entity.ServiceDescription = dto.ServiceDescription?.Trim();
             entity.Price = dto.Price;
             entity.DurationMinutes = dto.DurationMinutes;
-            entity.ImageUrl = dto.ImageUrl?.Trim();
             entity.ServiceType = dto.ServiceType?.Trim();
             entity.IsActive = dto.IsActive;
 
@@ -124,5 +123,17 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> UpdateImageUrlAsync(int serviceId, string imageUrl)
+        {
+            var service = await _db.Services.FindAsync(serviceId);
+            if (service == null) return false;
+
+            service.ImageUrl = imageUrl.Trim();
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 }

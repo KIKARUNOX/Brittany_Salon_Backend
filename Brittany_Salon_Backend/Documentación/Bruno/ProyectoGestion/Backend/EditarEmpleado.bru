@@ -1,0 +1,21 @@
+meta {
+  name: EditarEmpleado
+  type: http
+  seq: 5
+}
+
+put {
+  url: https://localhost:7227/api/employees/1
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  Name: Antony Monge Lopez
+  Specialty: Estilista Senior
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

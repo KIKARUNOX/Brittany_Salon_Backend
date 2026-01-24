@@ -1,0 +1,19 @@
+meta {
+  name: BuscarPorEspecialidad
+  type: http
+  seq: 10
+}
+
+get {
+  url: https://localhost:7227/api/employees/search/by-specialty?specialty=corte
+  body: none
+  auth: inherit
+}
+
+query {
+  specialty: corte
+}
+
+settings {
+  encodeUrl: true
+}
