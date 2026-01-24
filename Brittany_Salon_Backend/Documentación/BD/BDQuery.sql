@@ -156,3 +156,7 @@ CREATE TABLE Inventory (
 );
 
 
+
+
+------------------
+select * from Service
