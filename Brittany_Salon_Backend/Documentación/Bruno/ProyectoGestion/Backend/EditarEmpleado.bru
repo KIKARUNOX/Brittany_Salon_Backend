@@ -4,15 +4,15 @@ meta {
   seq: 5
 }
 
-post {
-  url: https://localhost:7227/api/employees/1?Name=Antony Monge Lopez&Specialty=Estilista
-  body: none
+put {
+  url: https://localhost:7227/api/employees/1
+  body: multipartForm
   auth: inherit
 }
 
-params:query {
+body:multipart-form {
   Name: Antony Monge Lopez
-  Specialty: Estilista
+  Specialty: Estilista Senior
 }
 
 settings {
