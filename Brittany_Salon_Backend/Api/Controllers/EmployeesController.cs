@@ -31,6 +31,50 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
+        /// Busca empleados por nombre (busqueda parcial)
+        /// </summary>
+        /// <param name="name">Texto a buscar en el nombre</param>
+        /// <param name="onlyActive">Si es true, solo retorna empleados activos</param>
+        /// <returns>Lista de empleados que coinciden</returns>
+        /// <response code="200">Lista de empleados encontrados</response>
+        /// <response code="400">Parametro de busqueda invalido</response>
+        [HttpGet("search/by-name")]
+        [ProducesResponseType(typeof(List<EmployeeReadDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<EmployeeReadDto>>> SearchByName(
+            [FromQuery] string name, 
+            [FromQuery] bool onlyActive = false)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return BadRequest(new ErrorResponse { Message = "El parametro 'name' es requerido." });
+
+            var employees = await _employeeService.SearchByNameAsync(name, onlyActive);
+            return Ok(employees);
+        }
+
+        /// <summary>
+        /// Busca empleados por especialidad (busqueda parcial)
+        /// </summary>
+        /// <param name="specialty">Texto a buscar en la especialidad</param>
+        /// <param name="onlyActive">Si es true, solo retorna empleados activos</param>
+        /// <returns>Lista de empleados que coinciden</returns>
+        /// <response code="200">Lista de empleados encontrados</response>
+        /// <response code="400">Parametro de busqueda invalido</response>
+        [HttpGet("search/by-specialty")]
+        [ProducesResponseType(typeof(List<EmployeeReadDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<List<EmployeeReadDto>>> SearchBySpecialty(
+            [FromQuery] string specialty, 
+            [FromQuery] bool onlyActive = false)
+        {
+            if (string.IsNullOrWhiteSpace(specialty))
+                return BadRequest(new ErrorResponse { Message = "El parametro 'specialty' es requerido." });
+
+            var employees = await _employeeService.SearchBySpecialtyAsync(specialty, onlyActive);
+            return Ok(employees);
+        }
+
+        /// <summary>
         /// Obtiene un empleado por su ID
         /// </summary>
         /// <param name="id">ID del empleado</param>
@@ -172,6 +216,27 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
             return NoContent();
         }
+
+        /// <summary>
+        /// Elimina permanentemente un empleado de la base de datos
+        /// ADVERTENCIA: Esta accion no se puede deshacer
+        /// </summary>
+        /// <param name="id">ID del empleado a eliminar</param>
+        /// <returns>NoContent si se elimino correctamente</returns>
+        /// <response code="204">Empleado eliminado permanentemente</response>
+        /// <response code="404">Empleado no encontrado</response>
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeletePermanently(int id)
+        {
+            var result = await _employeeService.DeletePermanentlyAsync(id);
+            
+            if (!result)
+                return NotFound(new ErrorResponse { Message = "Empleado no encontrado." });
+
+            return NoContent();
+        }
     }
 
     /// <summary>
@@ -182,6 +247,8 @@ namespace Brittany_Salon_Backend.Api.Controllers
         public string Message { get; set; } = string.Empty;
         public List<string> Errors { get; set; } = [];
     }
+
+
 
 
 

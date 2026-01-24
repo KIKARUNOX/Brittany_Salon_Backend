@@ -1,0 +1,21 @@
+meta {
+  name: EditarEmpleado
+  type: http
+  seq: 5
+}
+
+post {
+  url: https://localhost:7227/api/employees/1?Name=Antony Monge Lopez&Specialty=Estilista
+  body: none
+  auth: inherit
+}
+
+params:query {
+  Name: Antony Monge Lopez
+  Specialty: Estilista
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

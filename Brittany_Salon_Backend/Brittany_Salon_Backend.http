@@ -22,6 +22,30 @@ Accept: application/json
 
 ###
 
+### Buscar empleados por nombre
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees/search/by-name?name=Antony
+Accept: application/json
+
+###
+
+### Buscar empleados por nombre (solo activos)
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees/search/by-name?name=Antony&onlyActive=true
+Accept: application/json
+
+###
+
+### Buscar empleados por especialidad
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees/search/by-specialty?specialty=corte
+Accept: application/json
+
+###
+
+### Buscar empleados por especialidad (solo activos)
+GET {{Brittany_Salon_Backend_HostAddress}}/api/employees/search/by-specialty?specialty=corte&onlyActive=true
+Accept: application/json
+
+###
+
 ### Desactivar empleado (eliminacion logica)
 PATCH {{Brittany_Salon_Backend_HostAddress}}/api/employees/1/deactivate
 
@@ -29,6 +53,11 @@ PATCH {{Brittany_Salon_Backend_HostAddress}}/api/employees/1/deactivate
 
 ### Reactivar empleado
 PATCH {{Brittany_Salon_Backend_HostAddress}}/api/employees/1/reactivate
+
+###
+
+### ELIMINAR PERMANENTEMENTE empleado (NO se puede deshacer)
+DELETE {{Brittany_Salon_Backend_HostAddress}}/api/employees/1
 
 ###
 

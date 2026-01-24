@@ -66,6 +66,54 @@ namespace Brittany_Salon_Backend.Application.Services
             return MapToReadDto(employee);
         }
 
+        /// <summary>
+        /// Busca empleados por nombre (busqueda parcial)
+        /// </summary>
+        public async Task<List<EmployeeReadDto>> SearchByNameAsync(string name, bool onlyActive = false)
+        {
+            _logger.LogInfo("Buscando empleados por nombre: '{Name}', Solo activos: {OnlyActive}", name, onlyActive);
+
+            var searchTerm = name.Trim().ToLower();
+
+            var query = _db.Employees.AsNoTracking();
+
+            if (onlyActive)
+                query = query.Where(e => e.IsActive);
+
+            var employees = await query
+                .Where(e => e.Name.ToLower().Contains(searchTerm))
+                .OrderBy(e => e.Name)
+                .Select(e => MapToReadDto(e))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} empleados con nombre '{Name}'", employees.Count, name);
+            return employees;
+        }
+
+        /// <summary>
+        /// Busca empleados por especialidad (busqueda parcial)
+        /// </summary>
+        public async Task<List<EmployeeReadDto>> SearchBySpecialtyAsync(string specialty, bool onlyActive = false)
+        {
+            _logger.LogInfo("Buscando empleados por especialidad: '{Specialty}', Solo activos: {OnlyActive}", specialty, onlyActive);
+
+            var searchTerm = specialty.Trim().ToLower();
+
+            var query = _db.Employees.AsNoTracking();
+
+            if (onlyActive)
+                query = query.Where(e => e.IsActive);
+
+            var employees = await query
+                .Where(e => e.Specialty != null && e.Specialty.ToLower().Contains(searchTerm))
+                .OrderBy(e => e.Name)
+                .Select(e => MapToReadDto(e))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} empleados con especialidad '{Specialty}'", employees.Count, specialty);
+            return employees;
+        }
+
         public async Task<EmployeeReadDto> CreateAsync(EmployeeCreateDto dto)
         {
             _logger.LogInfo("Iniciando creacion de empleado: {Email}", dto.Email);
@@ -223,6 +271,35 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
 
             _logger.LogInfo("Empleado ID {Id} reactivado exitosamente", id);
+            return true;
+        }
+
+        /// <summary>
+        /// Elimina permanentemente un empleado de la base de datos
+        /// </summary>
+        public async Task<bool> DeletePermanentlyAsync(int id)
+        {
+            _logger.LogInfo("Eliminando permanentemente empleado ID: {Id}", id);
+
+            var entity = await _db.Employees.FindAsync(id);
+            if (entity == null)
+            {
+                _logger.LogWarning("Empleado con ID {Id} no encontrado", id);
+                return false;
+            }
+
+            // Eliminar imagen si existe
+            if (!string.IsNullOrWhiteSpace(entity.Image))
+            {
+                _logger.LogInfo("Eliminando imagen del empleado: {Image}", entity.Image);
+                _imageService.DeleteImage(entity.Image);
+            }
+
+            // Eliminar de la base de datos
+            _db.Employees.Remove(entity);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Empleado ID {Id} eliminado permanentemente", id);
             return true;
         }
 
