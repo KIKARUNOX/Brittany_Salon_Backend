@@ -69,12 +69,22 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
         // PUT: api/services/5
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] ServiceUpdateDto dto)
+        [Consumes("multipart/form-data")]
+        [RequestSizeLimit(10_000_000)]
+        public async Task<IActionResult> Update(int id, [FromForm] ServiceUpdateDto dto)
         {
             try
             {
+                // 1) Actualizar datos normales del servicio
                 var updated = await _serviceService.UpdateAsync(id, dto);
                 if (!updated) return NotFound("Servicio no encontrado.");
+
+                // 2) Si mandaron imagen, guardarla y actualizar el ImageUrl en BD
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    var url = await _imageService.ProcessAndSaveImageAsync(dto.Image, "imageService", id);
+                    await _serviceService.UpdateImageUrlAsync(id, url);
+                }
 
                 return NoContent();
             }
@@ -83,6 +93,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return Conflict(ex.Message);
             }
         }
+
 
         // PATCH: api/services/5/deactivate
         [HttpPatch("{id:int}/deactivate")]
