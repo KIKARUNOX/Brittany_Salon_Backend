@@ -10,6 +10,8 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
             Task<bool> UpdateAsync(int id, ServiceUpdateDto dto);
             Task<bool> DeactivateAsync(int id);
             Task<bool> UpdateImageUrlAsync(int serviceId, string imageUrl);
+            Task<List<ServiceReadDto>> SearchByNameAsync(string name, bool onlyActive = false);
+
 
     }
 }
