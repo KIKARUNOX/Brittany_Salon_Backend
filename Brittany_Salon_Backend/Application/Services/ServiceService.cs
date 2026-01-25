@@ -6,6 +6,9 @@ using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
+using Brittany_Salon_Backend.Application.Validators;
+using Brittany_Salon_Backend.Application.Exceptions;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
@@ -13,11 +16,13 @@ namespace Brittany_Salon_Backend.Application.Services
     {
         private readonly AppDbContext _db;
         private readonly IImageService _imageService;
+        private readonly IDevLogger _logger;
 
-        public ServiceService(AppDbContext db, IImageService imageService)
+        public ServiceService(AppDbContext db, IImageService imageService, IDevLogger logger)
         {
             _db = db;
             _imageService = imageService;
+            _logger = logger;
         }
 
         public async Task<List<ServiceReadDto>> GetAllAsync(bool onlyActive = false)
@@ -65,10 +70,9 @@ namespace Brittany_Salon_Backend.Application.Services
 
         public async Task<ServiceReadDto> CreateAsync(ServiceCreateDto dto)
         {
-            // 1) Validación: nombre repetido
-            var nameExists = await _db.Services.AnyAsync(x => x.ServiceName == dto.ServiceName);
-            if (nameExists)
-                throw new InvalidOperationException("Ya existe un servicio con ese nombre.");
+            var validationErrors = ServiceValidator.ValidateCreate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
             // 2) Crear entidad (sin imagen todavía)
             var entity = new Service
@@ -101,10 +105,10 @@ namespace Brittany_Salon_Backend.Application.Services
             var entity = await _db.Services.FindAsync(id);
             if (entity is null) return false;
 
-            // 2) Validación: nombre tomado por otro
-            var nameTaken = await _db.Services.AnyAsync(x => x.ServiceName == dto.ServiceName && x.ServiceId != id);
-            if (nameTaken)
-                throw new InvalidOperationException("Ya existe otro servicio con ese nombre.");
+            var validationErrors = ServiceValidator.ValidateUpdate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
+
 
             // 3) Actualizar campos
             entity.ServiceName = dto.ServiceName.Trim();
@@ -213,6 +217,33 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+        public async Task<bool> ReactivateAsync(int id)
+        {
+            var entity = await _db.Services.FindAsync(id);
+            if (entity == null) return false;
+
+            if (entity.IsActive) return true;
+
+            entity.IsActive = true;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeletePermanentlyAsync(int id)
+        {
+            var entity = await _db.Services.FindAsync(id);
+            if (entity == null) return false;
+
+            if (!string.IsNullOrWhiteSpace(entity.ImageUrl))
+            {
+                _imageService.DeleteImage(entity.ImageUrl);
+            }
+
+            _db.Services.Remove(entity);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
 
     }
 }
