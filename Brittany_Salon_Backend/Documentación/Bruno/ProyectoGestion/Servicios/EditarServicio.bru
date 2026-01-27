@@ -5,11 +5,22 @@ meta {
 }
 
 put {
-  url: https://localhost:7227/api/services/5
-  body: none
+  url: https://localhost:7227/api/services/7
+  body: multipartForm
   auth: inherit
+}
+
+body:multipart-form {
+  ServiceName: Corte de moj
+  ServiceDescription: Corte feo
+  Price: 4500
+  DurationMinutes: 30
+  ServiceType: Cabello
+  IsActive: true
+  Image: @file(C:\Users\Isaac Chevez\Pictures\01pp-2.jpg)
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

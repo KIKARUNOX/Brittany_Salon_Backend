@@ -1,5 +1,6 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Service;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
@@ -41,10 +42,15 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 var created = await _serviceService.CreateAsync(dto);
                 return CreatedAtAction(nameof(GetById), new { id = created.ServiceId }, created);
             }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { errors = ex.Errors });
+            }
             catch (InvalidOperationException ex)
             {
                 return Conflict(ex.Message);
             }
+
         }
 
         [HttpPut("{id:int}")]
@@ -58,6 +64,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 if (!updated) return NotFound("Servicio no encontrado.");
 
                 return NoContent();
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { errors = ex.Errors });
             }
             catch (InvalidOperationException ex)
             {
@@ -81,6 +91,25 @@ namespace Brittany_Salon_Backend.Api.Controllers
             var result = await _serviceService.SearchByNameAsync(name, onlyActive);
             return Ok(result);
         }
+
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            var ok = await _serviceService.ReactivateAsync(id);
+            if (!ok) return NotFound("Servicio no encontrado.");
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeletePermanently(int id)
+        {
+            var ok = await _serviceService.DeletePermanentlyAsync(id);
+            if (!ok) return NotFound("Servicio no encontrado.");
+
+            return NoContent();
+        }
+
 
     }
 }
