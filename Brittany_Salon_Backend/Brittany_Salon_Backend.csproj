@@ -24,7 +24,6 @@
     <Folder Include="Infrastructure\Settings\" />
     <Folder Include="Infrastructure\Repositories\" />
     <Folder Include="Infrastructure\Persistence\Configurations\" />
-    <Folder Include="public\imageUser\" />
   </ItemGroup>
 
 </Project>
