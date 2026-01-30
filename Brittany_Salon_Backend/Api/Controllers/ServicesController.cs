@@ -78,10 +78,17 @@ namespace Brittany_Salon_Backend.Api.Controllers
         [HttpPatch("{id:int}/deactivate")]
         public async Task<IActionResult> Deactivate(int id)
         {
-            var ok = await _serviceService.DeactivateAsync(id);
-            if (!ok) return NotFound("Servicio no encontrado.");
-
-            return NoContent();
+            try 
+            {
+                var ok = await _serviceService.DeactivateAsync(id);
+                if (!ok) return NotFound("Servicio no encontrado.");
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+           
         }
         [HttpGet("search")]
         public async Task<ActionResult<List<ServiceReadDto>>> SearchByName(
@@ -104,10 +111,16 @@ namespace Brittany_Salon_Backend.Api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeletePermanently(int id)
         {
-            var ok = await _serviceService.DeletePermanentlyAsync(id);
-            if (!ok) return NotFound("Servicio no encontrado.");
-
-            return NoContent();
+            try 
+            {
+                var ok = await _serviceService.DeletePermanentlyAsync(id);
+                if (!ok) return NotFound("Servicio no encontrado.");
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
 

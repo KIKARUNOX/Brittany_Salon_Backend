@@ -39,5 +39,8 @@ namespace Brittany_Salon_Backend.Domain.Entities
         // Navegación
         [ForeignKey(nameof(ClientId))]
         public Clients Client { get; set; } = null!;
+
+        public ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
+
     }
 }

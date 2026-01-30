@@ -40,6 +40,8 @@ else
 builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyección de dependencias
 builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyección de dependencias Employee
 builder.Services.AddScoped<IImageService, ImageService>(); // Inyección de dependencias Image
+builder.Services.AddScoped<IAppointmentService, AppointmentService>(); //Inyección de dependencias Appointment
+
 
 var app = builder.Build();
 

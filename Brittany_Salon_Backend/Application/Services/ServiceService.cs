@@ -74,7 +74,6 @@ namespace Brittany_Salon_Backend.Application.Services
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            // 2) Crear entidad (sin imagen todavía)
             var entity = new Service
             {
                 ServiceName = dto.ServiceName.Trim(),
@@ -89,19 +88,16 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Services.Add(entity);
             await _db.SaveChangesAsync();
 
-            // 3) Procesar imagen si viene
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessServiceImageAsync(entity, dto.Image);
             }
 
-            // 4) Retornar
             return MapToReadDto(entity);
         }
 
         public async Task<bool> UpdateAsync(int id, ServiceUpdateDto dto)
         {
-            // 1) Buscar
             var entity = await _db.Services.FindAsync(id);
             if (entity is null) return false;
 
@@ -109,8 +105,6 @@ namespace Brittany_Salon_Backend.Application.Services
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-
-            // 3) Actualizar campos
             entity.ServiceName = dto.ServiceName.Trim();
             entity.ServiceDescription = dto.ServiceDescription?.Trim();
             entity.Price = dto.Price;
@@ -118,13 +112,11 @@ namespace Brittany_Salon_Backend.Application.Services
             entity.ServiceType = dto.ServiceType?.Trim();
             entity.IsActive = dto.IsActive;
 
-            // 4) Imagen (si viene nueva)
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await UpdateServiceImageAsync(entity, dto.Image);
             }
 
-            // 5) Guardar todo
             await _db.SaveChangesAsync();
             return true;
         }
@@ -133,6 +125,10 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             var entity = await _db.Services.FirstOrDefaultAsync(x => x.ServiceId == id);
             if (entity is null) return false;
+
+            var hasAppointments = await HasAssociatedAppointmentsAsync(id);
+            if (hasAppointments)
+                throw new InvalidOperationException("No se puede desactivar el servicio porque está asociado a una o más citas.");
 
             entity.IsActive = false;
             await _db.SaveChangesAsync();
@@ -164,9 +160,6 @@ namespace Brittany_Salon_Backend.Application.Services
             };
         }
 
-        /// <summary>
-        /// Procesa y guarda la imagen del servicio (CREATE)
-        /// </summary>
         private async Task ProcessServiceImageAsync(Service entity, IFormFile imageFile)
         {
             string imageUrl = await _imageService.ProcessAndSaveImageAsync(imageFile, "imageService", entity.ServiceId);
@@ -174,21 +167,17 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Actualiza la imagen del servicio (UPDATE) eliminando la anterior si existe
-        /// </summary>
         private async Task UpdateServiceImageAsync(Service entity, IFormFile newImage)
         {
-            // eliminar anterior si existe
             if (!string.IsNullOrWhiteSpace(entity.ImageUrl))
             {
                 _imageService.DeleteImage(entity.ImageUrl);
             }
 
-            // guardar nueva
             string imageUrl = await _imageService.ProcessAndSaveImageAsync(newImage, "imageService", entity.ServiceId);
             entity.ImageUrl = imageUrl;
         }
+
         public async Task<List<ServiceReadDto>> SearchByNameAsync(string name, bool onlyActive = false)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -217,6 +206,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+
         public async Task<bool> ReactivateAsync(int id)
         {
             var entity = await _db.Services.FindAsync(id);
@@ -234,6 +224,10 @@ namespace Brittany_Salon_Backend.Application.Services
             var entity = await _db.Services.FindAsync(id);
             if (entity == null) return false;
 
+            var hasAppointments = await HasAssociatedAppointmentsAsync(id);
+            if (hasAppointments)
+                throw new InvalidOperationException("No se puede eliminar el servicio porque está asociado a una o más citas.");
+
             if (!string.IsNullOrWhiteSpace(entity.ImageUrl))
             {
                 _imageService.DeleteImage(entity.ImageUrl);
@@ -243,7 +237,11 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
             return true;
         }
-
-
+        private async Task<bool> HasAssociatedAppointmentsAsync(int serviceId)
+        {
+            return await _db.AppointmentServices
+                .AsNoTracking()
+                .AnyAsync(x => x.ServiceId == serviceId);
+        }
     }
 }

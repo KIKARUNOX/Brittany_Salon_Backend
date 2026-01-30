@@ -30,5 +30,8 @@ namespace Brittany_Salon_Backend.Domain.Entities
         public string? ServiceType { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        public ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
+
     }
 }

@@ -14,6 +14,8 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
 
         public DbSet<Appointment> Appointments { get; set; } = null!;
 
+        public DbSet<AppointmentService> AppointmentServices { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -111,6 +113,25 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasForeignKey(x => x.ClientId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+
+            // Mapeo explícito para AppointmentService
+            modelBuilder.Entity<AppointmentService>(entity =>
+            {
+                entity.ToTable("AppointmentService");
+                entity.HasKey(x => x.AppointmentServiceId);
+
+                entity.Property(x => x.ServicePrice)
+                      .HasColumnType("decimal(10,2)");
+
+                entity.HasOne(x => x.Appointment)
+                      .WithMany(a => a.AppointmentServices)
+                      .HasForeignKey(x => x.AppointmentId);
+
+                entity.HasOne(x => x.Service)
+                      .WithMany(s => s.AppointmentServices)
+                      .HasForeignKey(x => x.ServiceId);
+            });
+
         }
     }
 }
