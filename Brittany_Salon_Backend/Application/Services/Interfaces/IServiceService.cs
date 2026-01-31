@@ -13,6 +13,9 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
             Task<List<ServiceReadDto>> SearchByNameAsync(string name, bool onlyActive = false);
             Task<bool> DeletePermanentlyAsync(int id);
             Task<bool> ReactivateAsync(int id);
+            Task<List<FeaturedServiceReadDto>> GetFeaturedAsync(int top = 5, bool onlyActive = true);
+
+
 
     }
 }

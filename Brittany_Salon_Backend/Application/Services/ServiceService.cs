@@ -243,5 +243,43 @@ namespace Brittany_Salon_Backend.Application.Services
                 .AsNoTracking()
                 .AnyAsync(x => x.ServiceId == serviceId);
         }
+        public async Task<List<FeaturedServiceReadDto>> GetFeaturedAsync(int top = 5, bool onlyActive = true)
+        {
+            if (top <= 0) top = 5;
+            if (top > 50) top = 50;
+
+            var query =
+                from aps in _db.AppointmentServices.AsNoTracking()
+                join s in _db.Services.AsNoTracking() on aps.ServiceId equals s.ServiceId
+                where !onlyActive || s.IsActive
+                group s by new
+                {
+                    s.ServiceId,
+                    s.ServiceName,
+                    s.ServiceDescription,
+                    s.Price,
+                    s.DurationMinutes,
+                    s.ImageUrl,
+                    s.ServiceType,
+                    s.IsActive
+                }
+                into g
+                orderby g.Count() descending
+                select new FeaturedServiceReadDto
+                {
+                    ServiceId = g.Key.ServiceId,
+                    ServiceName = g.Key.ServiceName,
+                    ServiceDescription = g.Key.ServiceDescription,
+                    Price = g.Key.Price,
+                    DurationMinutes = g.Key.DurationMinutes,
+                    ImageUrl = g.Key.ImageUrl,
+                    ServiceType = g.Key.ServiceType,
+                    IsActive = g.Key.IsActive,
+                    RequestsCount = g.Count()
+                };
+
+            return await query.Take(top).ToListAsync();
+        }
+
     }
 }

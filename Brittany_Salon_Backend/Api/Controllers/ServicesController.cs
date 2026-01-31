@@ -122,6 +122,15 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return Conflict(ex.Message);
             }
         }
+        [HttpGet("featured")]
+        public async Task<ActionResult<List<FeaturedServiceReadDto>>> GetFeatured(
+        [FromQuery] int top = 5,
+        [FromQuery] bool onlyActive = true)
+        {
+            var result = await _serviceService.GetFeaturedAsync(top, onlyActive);
+            return Ok(result);
+        }
+
 
 
     }

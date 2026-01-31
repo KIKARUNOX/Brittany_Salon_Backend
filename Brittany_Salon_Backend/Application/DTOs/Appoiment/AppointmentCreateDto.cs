@@ -15,5 +15,7 @@ namespace Brittany_Salon_Backend.Application.DTOs.Appointment
 
         public List<AppointmentServiceCreateDto> Services { get; set; } = new();
         public List<AppointmentProductCreateDto> Products { get; set; } = new();
+
+        public int? HairLengthOption { get; set; }
     }
 }
