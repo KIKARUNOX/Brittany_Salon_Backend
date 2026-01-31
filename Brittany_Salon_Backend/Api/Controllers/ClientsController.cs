@@ -73,6 +73,26 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
+        /// Obtiene el saldo pendiente de un cliente
+        /// </summary>
+        /// <param name="id">ID del cliente</param>
+        /// <returns>Saldo pendiente del cliente</returns>
+        /// <response code="200">Saldo pendiente obtenido</response>
+        /// <response code="404">Cliente no encontrado</response>
+        [HttpGet("{id:int}/balance")]
+        [ProducesResponseType(typeof(decimal), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<decimal>> GetPendingBalance(int id)
+        {
+            var client = await _clientService.GetByIdAsync(id);
+
+            if (client == null)
+                return NotFound(new ErrorResponse { Message = "Cliente no encontrado." });
+
+            return Ok(client.PendingBalance);
+        }
+
+        /// <summary>
         /// Registra un nuevo cliente
         /// </summary>
         /// <param name="dto">Datos del cliente a registrar (multipart/form-data)</param>
