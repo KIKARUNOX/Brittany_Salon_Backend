@@ -17,7 +17,7 @@ namespace Brittany_Salon_Backend.Application.DTOs.Client
         [MaxLength(20, ErrorMessage = "El teléfono no puede exceder 20 caracteres.")]
         public string? Phone { get; set; }
 
-        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
+        [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres.")]
         [MaxLength(255, ErrorMessage = "La contraseña no puede exceder 255 caracteres.")]
         public string? Password { get; set; }
 
