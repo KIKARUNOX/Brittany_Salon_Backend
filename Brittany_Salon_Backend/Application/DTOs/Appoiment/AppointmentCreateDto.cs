@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Brittany_Salon_Backend.Application.DTOs.Appointment;
+using System;
 using System.Collections.Generic;
 
 namespace Brittany_Salon_Backend.Application.DTOs.Appointment
@@ -13,5 +14,6 @@ namespace Brittany_Salon_Backend.Application.DTOs.Appointment
         public int ClientId { get; set; }
 
         public List<AppointmentServiceCreateDto> Services { get; set; } = new();
+        public List<AppointmentProductCreateDto> Products { get; set; } = new();
     }
 }

@@ -15,6 +15,8 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public DbSet<Appointment> Appointments { get; set; } = null!;
 
         public DbSet<AppointmentService> AppointmentServices { get; set; } = null!;
+        public DbSet<Product> Products { get; set; } = null!;
+        public DbSet<AppointmentProduct> AppointmentProducts { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -130,6 +132,48 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.HasOne(x => x.Service)
                       .WithMany(s => s.AppointmentServices)
                       .HasForeignKey(x => x.ServiceId);
+            });
+
+            // Mapeo explícito para Product
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.ToTable("Product");
+                entity.HasKey(x => x.ProductId);
+
+                entity.Property(x => x.ProductName)
+                      .HasMaxLength(100)
+                      .IsRequired();
+
+                entity.Property(x => x.ProductDescription)
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Price)
+                      .HasColumnType("decimal(10,2)")
+                      .IsRequired();
+
+                entity.Property(x => x.ImageUrl)
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.ExpirationDate)
+                      .HasColumnType("date");
+
+                entity.Property(x => x.IsActive)
+                      .HasDefaultValue(true);
+            });
+
+            // Mapeo explícito para AppointmentProduct
+            modelBuilder.Entity<AppointmentProduct>(entity =>
+            {
+                entity.ToTable("AppointmentProduct");
+                entity.HasKey(x => x.AppointmentProductId);
+
+                entity.HasOne(x => x.Appointment)
+                      .WithMany(a => a.AppointmentProducts)
+                      .HasForeignKey(x => x.AppointmentId);
+
+                entity.HasOne(x => x.Product)
+                      .WithMany(p => p.AppointmentProducts)
+                      .HasForeignKey(x => x.ProductId);
             });
 
         }
