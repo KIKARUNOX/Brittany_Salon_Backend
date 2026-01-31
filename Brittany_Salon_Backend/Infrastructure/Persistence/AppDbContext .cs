@@ -11,7 +11,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
 
         public DbSet<Service> Services { get; set; } = null!;
         public DbSet<Employee> Employees { get; set; } = null!;
-
+        public DbSet<Clients> Clients { get; set; } = null!;
         public DbSet<Appointment> Appointments { get; set; } = null!;
 
         public DbSet<AppointmentService> AppointmentServices { get; set; } = null!;
@@ -78,6 +78,42 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
 
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);
+            });
+
+            // Mapeo explícito para Client
+            modelBuilder.Entity<Clients>(entity =>
+            {
+                entity.ToTable("Client");
+                entity.HasKey(x => x.ClientId);
+
+                entity.Property(x => x.Name)
+                      .HasMaxLength(100)
+                      .IsRequired();
+
+                entity.Property(x => x.Email)
+                      .HasMaxLength(150)
+                      .IsRequired();
+
+                entity.Property(x => x.Phone)
+                      .HasMaxLength(20);
+
+                entity.Property(x => x.Password)
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(x => x.PendingBalance)
+                      .HasColumnType("decimal(10,2)")
+                      .HasDefaultValue(0);
+
+                entity.Property(x => x.ImageUrl)
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.IsActive)
+                      .HasDefaultValue(true);
+
+                entity.Property(x => x.CreatedAt)
+                      .HasColumnType("datetime")
+                      .HasDefaultValueSql("GETDATE()");
             });
 
             //Mapeo explícito para Appointment
