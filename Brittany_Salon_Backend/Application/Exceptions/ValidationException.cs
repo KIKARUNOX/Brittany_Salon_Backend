@@ -30,4 +30,22 @@ namespace Brittany_Salon_Backend.Application.Exceptions
             Field = field;
         }
     }
+
+    /// <summary>
+    /// Respuesta de error genérica
+    /// </summary>
+    public class ErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+        public string? Field { get; set; }
+    }
+
+    /// <summary>
+    /// Respuesta de error de validación
+    /// </summary>
+    public class ValidationErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+        public List<string> Errors { get; set; } = new();
+    }
 }
