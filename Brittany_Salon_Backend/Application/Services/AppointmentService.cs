@@ -1,6 +1,9 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Appointment;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Validators;
 using Brittany_Salon_Backend.Domain.Entities;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using AppointmentServiceEntity = Brittany_Salon_Backend.Domain.Entities.AppointmentService;
@@ -10,34 +13,27 @@ namespace Brittany_Salon_Backend.Application.Services
     public class AppointmentService : IAppointmentService
     {
         private readonly AppDbContext _db;
+        private readonly IDevLogger _logger;
 
-        public AppointmentService(AppDbContext db)
+        public AppointmentService(AppDbContext db, IDevLogger logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         public async Task<int> CreateAsync(AppointmentCreateDto dto)
         {
             await using var tx = await _db.Database.BeginTransactionAsync();
 
-            if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
+            var validationErrors = AppointmentValidator.ValidateCreate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
-            if (dto.ClientId <= 0)
-                throw new InvalidOperationException("ClientId inválido.");
-
-            if (dto.StartTime == default)
-                throw new InvalidOperationException("StartTime inválido.");
-
-            if (dto.Services is null || dto.Services.Count == 0)
-                throw new InvalidOperationException("Debe seleccionar al menos un servicio.");
-
-            // Creo la cita sin total y sin hora final todavía (la calculo con base en los servicios)
             var appointment = new Appointment
             {
                 AppointmentDate = dto.AppointmentDate,
                 StartTime = dto.StartTime,
-                EndTime = dto.StartTime, // luego lo actualizo
+                EndTime = dto.StartTime,
                 AppointmentStatus = dto.AppointmentStatus,
                 ClientId = dto.ClientId,
                 IsActive = true
@@ -48,14 +44,10 @@ namespace Brittany_Salon_Backend.Application.Services
 
             decimal totalCost = 0m;
 
-            // Traigo los servicios del request y calculo costo y duración base
             var serviceIds = dto.Services
                 .Select(s => s.ServiceId)
                 .Distinct()
                 .ToList();
-
-            if (serviceIds.Count == 0)
-                throw new InvalidOperationException("Debe seleccionar al menos un servicio.");
 
             var services = await _db.Services
                 .Where(s => serviceIds.Contains(s.ServiceId))
@@ -66,31 +58,31 @@ namespace Brittany_Salon_Backend.Application.Services
 
             foreach (var service in services)
             {
-                var appointmentService = new AppointmentServiceEntity
+                _db.AppointmentServices.Add(new AppointmentServiceEntity
                 {
                     AppointmentId = appointment.AppointmentId,
                     ServiceId = service.ServiceId,
                     ServicePrice = service.Price
-                };
+                });
 
                 totalCost += service.Price;
-                _db.AppointmentServices.Add(appointmentService);
             }
 
             var baseDurationMinutes = services.Sum(s => s.DurationMinutes);
 
-            // Aplico costos y tiempo adicional por largo de pelo solo para servicios de tipo "cabello"
             var hairServiceCount = services.Count(s =>
                 !string.IsNullOrWhiteSpace(s.ServiceType) &&
                 s.ServiceType.Trim().ToLower() == "cabello"
             );
 
-            if (hairServiceCount > 0 && dto.HairLengthOption is null)
+            var hairOption = dto.HairLengthOption.GetValueOrDefault(0);
+
+            if (hairServiceCount > 0 && hairOption == 0)
                 throw new InvalidOperationException("Debe seleccionar el largo del cabello para servicios de tipo 'cabello'.");
 
-            decimal hairCostPerService = dto.HairLengthOption switch
+            decimal hairCostPerService = hairOption switch
             {
-                null => 0m,
+                0 => 0m,
                 1 => 5000m,
                 2 => 10000m,
                 3 => 15000m,
@@ -103,7 +95,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 _ => throw new InvalidOperationException("Opción de largo de pelo inválida.")
             };
 
-            var hairExtraMinutesPerService = dto.HairLengthOption is null ? 0 : dto.HairLengthOption.Value * 10;
+            var hairExtraMinutesPerService = hairOption == 0 ? 0 : hairOption * 10;
 
             totalCost += hairCostPerService * hairServiceCount;
 
@@ -111,7 +103,16 @@ namespace Brittany_Salon_Backend.Application.Services
 
             appointment.EndTime = appointment.StartTime.AddMinutes(totalDurationMinutes);
 
-            // Si llegan productos, sumo el costo y creo la relación
+            var availability = await ValidateAvailabilityAsync(new AppointmentAvailabilityRequestDto
+            {
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
+                ServiceIds = serviceIds
+            });
+
+            if (!availability.IsAvailable)
+                throw new InvalidOperationException(availability.Message);
+
             var productIds = (dto.Products ?? new List<AppointmentProductCreateDto>())
                 .Select(p => p.ProductId)
                 .Distinct()
@@ -128,18 +129,16 @@ namespace Brittany_Salon_Backend.Application.Services
 
                 foreach (var product in products)
                 {
-                    var appointmentProduct = new AppointmentProduct
+                    _db.AppointmentProducts.Add(new AppointmentProduct
                     {
                         AppointmentId = appointment.AppointmentId,
                         ProductId = product.ProductId
-                    };
+                    });
 
                     totalCost += product.Price;
-                    _db.AppointmentProducts.Add(appointmentProduct);
                 }
             }
 
-            // Actualizo el total final ya con servicios, productos y adicional por largo de pelo
             appointment.TotalCost = totalCost;
 
             await _db.SaveChangesAsync();
@@ -147,6 +146,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             return appointment.AppointmentId;
         }
+
         public async Task<List<AppointmentReadDto>> GetAllAsync()
         {
             return await _db.Appointments
@@ -167,6 +167,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+
         public async Task<List<AppointmentReadDto>> GetByDateAsync(DateTime date)
         {
             var onlyDate = date.Date;
@@ -190,6 +191,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+
         public async Task<List<AppointmentReadDto>> GetByStatusAsync(string status)
         {
             if (string.IsNullOrWhiteSpace(status))
@@ -216,6 +218,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+
         public async Task<List<AppointmentReadDto>> GetByClientIdAsync(int clientId)
         {
             if (clientId <= 0)
@@ -240,19 +243,15 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+
         public async Task<bool> UpdatePendingAsync(int appointmentId, AppointmentUpdateDto dto)
         {
             if (appointmentId <= 0)
                 throw new InvalidOperationException("AppointmentId inválido.");
 
-            if (dto is null)
-                throw new ArgumentNullException(nameof(dto));
-
-            if (dto.StartTime == default)
-                throw new InvalidOperationException("StartTime inválido.");
-
-            if (dto.Services is null || dto.Services.Count == 0)
-                throw new InvalidOperationException("Debe seleccionar al menos un servicio.");
+            var validationErrors = AppointmentValidator.ValidateUpdate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
             await using var tx = await _db.Database.BeginTransactionAsync();
 
@@ -265,7 +264,6 @@ namespace Brittany_Salon_Backend.Application.Services
             if (currentStatus != "pendiente")
                 throw new InvalidOperationException("Solo se puede editar una cita con estado Pendiente.");
 
-            // Traigo servicios desde la BD y valido existencia
             var serviceIds = dto.Services
                 .Select(s => s.ServiceId)
                 .Distinct()
@@ -281,20 +279,17 @@ namespace Brittany_Salon_Backend.Application.Services
             if (services.Count != serviceIds.Count)
                 throw new InvalidOperationException("Uno o más servicios no existen.");
 
-            // Calculo base de costo y duración
             decimal totalCost = 0m;
             var baseDurationMinutes = services.Sum(s => s.DurationMinutes);
 
             foreach (var s in services)
                 totalCost += s.Price;
 
-            // Calculo extras por largo de pelo para servicios de tipo "cabello"
             var hairServiceCount = services.Count(s =>
                 !string.IsNullOrWhiteSpace(s.ServiceType) &&
                 s.ServiceType.Trim().ToLower() == "cabello"
             );
 
-            // Acepto HairLengthOption = 0 o null como "sin opción" y no aplico extra
             var hairOption = dto.HairLengthOption.GetValueOrDefault(0);
 
             decimal hairCostPerService = hairOption switch
@@ -317,7 +312,6 @@ namespace Brittany_Salon_Backend.Application.Services
             totalCost += hairCostPerService * hairServiceCount;
             var totalDurationMinutes = baseDurationMinutes + (hairExtraMinutesPerService * hairServiceCount);
 
-            // Valido productos y los sumo al costo
             var productIds = (dto.Products ?? new List<AppointmentProductCreateDto>())
                 .Select(p => p.ProductId)
                 .Distinct()
@@ -336,14 +330,25 @@ namespace Brittany_Salon_Backend.Application.Services
                     totalCost += p.Price;
             }
 
-            // Actualizo tiempos recalculando EndTime desde el backend
-            appointment.StartTime = dto.StartTime;
-            appointment.EndTime = dto.StartTime.AddMinutes(totalDurationMinutes);
-            appointment.AppointmentDate = dto.StartTime.Date;
+            var newStart = dto.StartTime;
+            var newEnd = dto.StartTime.AddMinutes(totalDurationMinutes);
 
+            var availability = await ValidateAvailabilityAsync(new AppointmentAvailabilityRequestDto
+            {
+                StartTime = newStart,
+                EndTime = newEnd,
+                ServiceIds = serviceIds,
+                ExcludeAppointmentId = appointmentId
+            });
+
+            if (!availability.IsAvailable)
+                throw new InvalidOperationException(availability.Message);
+
+            appointment.StartTime = newStart;
+            appointment.EndTime = newEnd;
+            appointment.AppointmentDate = newStart.Date;
             appointment.TotalCost = totalCost;
 
-            // Reemplazo relaciones AppointmentService
             var existingApServices = await _db.AppointmentServices
                 .Where(x => x.AppointmentId == appointmentId)
                 .ToListAsync();
@@ -361,7 +366,6 @@ namespace Brittany_Salon_Backend.Application.Services
                 });
             }
 
-            // Reemplazo relaciones AppointmentProduct
             var existingApProducts = await _db.AppointmentProducts
                 .Where(x => x.AppointmentId == appointmentId)
                 .ToListAsync();
@@ -386,7 +390,6 @@ namespace Brittany_Salon_Backend.Application.Services
 
             return true;
         }
-
         public async Task<AppointmentDetailDto?> GetByIdAsync(int id)
         {
             if (id <= 0) return null;
@@ -440,6 +443,7 @@ namespace Brittany_Salon_Backend.Application.Services
                     .ToList()
             };
         }
+
         public async Task<bool> CancelAsync(int appointmentId)
         {
             if (appointmentId <= 0)
@@ -464,6 +468,7 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
             return true;
         }
+
         public async Task<bool> CompleteAsync(int appointmentId)
         {
             if (appointmentId <= 0)
@@ -492,6 +497,94 @@ namespace Brittany_Salon_Backend.Application.Services
 
             await _db.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<AppointmentAvailabilityResponseDto> ValidateAvailabilityAsync(AppointmentAvailabilityRequestDto dto)
+        {
+            if (dto is null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (dto.StartTime == default || dto.EndTime == default)
+                return new AppointmentAvailabilityResponseDto { IsAvailable = false, Message = "Fecha/hora inválidas." };
+
+            if (dto.EndTime <= dto.StartTime)
+                return new AppointmentAvailabilityResponseDto { IsAvailable = false, Message = "La hora de fin debe ser mayor a la hora de inicio." };
+
+            if (dto.ServiceIds is null || dto.ServiceIds.Count == 0)
+                return new AppointmentAvailabilityResponseDto { IsAvailable = false, Message = "Debe enviar al menos un servicio." };
+
+            if (!IsWithinBusinessHours(dto.StartTime, dto.EndTime, out var hoursMsg))
+                return new AppointmentAvailabilityResponseDto { IsAvailable = false, Message = hoursMsg };
+
+            var serviceIds = dto.ServiceIds.Distinct().ToList();
+
+            var conflict = await HasServiceConflictAsync(dto.StartTime, dto.EndTime, serviceIds, dto.ExcludeAppointmentId);
+            if (conflict)
+                return new AppointmentAvailabilityResponseDto { IsAvailable = false, Message = "El horario choca con otra cita que incluye uno o más de los mismos servicios." };
+
+            return new AppointmentAvailabilityResponseDto { IsAvailable = true, Message = "Horario disponible." };
+        }
+
+        private bool IsWithinBusinessHours(DateTime start, DateTime end, out string message)
+        {
+            message = string.Empty;
+
+            if (start.Date != end.Date)
+            {
+                message = "La cita debe iniciar y finalizar el mismo día.";
+                return false;
+            }
+
+            var day = start.DayOfWeek;
+
+            if (day == DayOfWeek.Sunday)
+            {
+                message = "Domingo: cerrado.";
+                return false;
+            }
+
+            var open = new TimeSpan(9, 0, 0);
+            var close = day == DayOfWeek.Saturday
+                ? new TimeSpan(18, 0, 0)
+                : new TimeSpan(20, 0, 0);
+
+            var startTod = start.TimeOfDay;
+            var endTod = end.TimeOfDay;
+
+            if (startTod < open || endTod > close)
+            {
+                message = day == DayOfWeek.Saturday
+                    ? "Sábado: horario permitido de 9:00 AM a 6:00 PM."
+                    : "Lunes a Viernes: horario permitido de 9:00 AM a 8:00 PM.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task<bool> HasServiceConflictAsync(
+            DateTime start,
+            DateTime end,
+            List<int> serviceIds,
+            int? excludeAppointmentId = null)
+        {
+            var query = _db.Appointments
+                .AsNoTracking()
+                .Where(a => a.StartTime < end && a.EndTime > start);
+
+            query = query.Where(a =>
+                (a.AppointmentStatus == null || a.AppointmentStatus.Trim().ToLower() != "cancelada")
+            );
+
+            if (excludeAppointmentId.HasValue)
+                query = query.Where(a => a.AppointmentId != excludeAppointmentId.Value);
+
+            return await query
+                .Join(_db.AppointmentServices.AsNoTracking(),
+                      a => a.AppointmentId,
+                      aps => aps.AppointmentId,
+                      (a, aps) => new { a, aps })
+                .AnyAsync(x => serviceIds.Contains(x.aps.ServiceId));
         }
 
     }
