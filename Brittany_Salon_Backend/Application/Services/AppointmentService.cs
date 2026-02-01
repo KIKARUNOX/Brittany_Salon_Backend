@@ -464,7 +464,35 @@ namespace Brittany_Salon_Backend.Application.Services
             await _db.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> CompleteAsync(int appointmentId)
+        {
+            if (appointmentId <= 0)
+                throw new InvalidOperationException("AppointmentId inválido.");
 
+            var appointment = await _db.Appointments
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            if (appointment is null) return false;
+
+            var currentStatus = (appointment.AppointmentStatus ?? string.Empty)
+                .Trim()
+                .ToLower();
+
+            if (currentStatus == "completada")
+                return true;
+
+            if (currentStatus == "cancelada")
+                throw new InvalidOperationException("No se puede completar una cita cancelada.");
+
+            if (currentStatus != "pendiente")
+                throw new InvalidOperationException("Solo se puede completar una cita en estado Pendiente.");
+
+            appointment.AppointmentStatus = "Completada";
+            appointment.IsActive = false;
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
 
     }
 }

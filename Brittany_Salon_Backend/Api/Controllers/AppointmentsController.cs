@@ -81,6 +81,14 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok("Cita cancelada.");
         }
 
+        [HttpPut("{id:int}/complete")]
+        public async Task<IActionResult> Complete(int id)
+        {
+            var ok = await _appointmentService.CompleteAsync(id);
+            if (!ok) return NotFound("Cita no encontrada.");
+
+            return Ok("Cita completada.");
+        }
 
 
     }
