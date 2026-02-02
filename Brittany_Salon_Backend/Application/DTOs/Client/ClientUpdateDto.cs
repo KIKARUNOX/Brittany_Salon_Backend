@@ -21,6 +21,9 @@ namespace Brittany_Salon_Backend.Application.DTOs.Client
         [MaxLength(255, ErrorMessage = "La contraseña no puede exceder 255 caracteres.")]
         public string? Password { get; set; }
 
+        [Required(ErrorMessage = "La contraseña actual es obligatoria para cambiar la contraseña.")]
+        public string? CurrentPassword { get; set; }
+
         /// <summary>
         /// Archivo de imagen (multipart/form-data)
         /// Tamaño máximo: 5MB

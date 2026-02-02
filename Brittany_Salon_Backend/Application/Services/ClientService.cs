@@ -7,6 +7,7 @@ using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
@@ -115,7 +116,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 Name = normalizedName,
                 Phone = normalizedPhone,
                 Email = normalizedEmail,
-                Password = dto.Password, // TODO: En producción, hashear la contraseña
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 IsActive = dto.IsActive ?? true,
                 CreatedAt = DateTime.Now
             };
@@ -168,7 +169,14 @@ namespace Brittany_Salon_Backend.Application.Services
                 entity.Phone = dto.Phone.Trim();
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
-                entity.Password = dto.Password; // TODO: En producción, hashear la contraseña
+            {
+                // Verificar la contrase?a actual
+                if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword!, entity.Password))
+                {
+                    throw new ValidationException(new List<string> { "La contrase?a actual es incorrecta." });
+                }
+                entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            }
 
             // Paso 5: Procesar imagen si se proporcionó
             if (dto.Image != null && dto.Image.Length > 0)
