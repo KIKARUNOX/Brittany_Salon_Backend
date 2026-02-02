@@ -1,0 +1,16 @@
+meta {
+  name: ObtenerSaldoPendiente
+  type: http
+  seq: 4
+}
+
+get {
+  url: https://localhost:7227/api/clients/1/balance
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

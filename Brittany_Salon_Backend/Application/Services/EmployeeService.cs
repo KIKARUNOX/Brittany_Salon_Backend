@@ -8,6 +8,7 @@ using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
@@ -137,7 +138,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 Name = normalizedName,
                 Phone = normalizedPhone,
                 Email = normalizedEmail,
-                Password = dto.Password, // TODO: En produccion, hashear la contrasena
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Specialty = dto.Specialty?.Trim(),
                 IsActive = dto.IsActive ?? true,
                 DateCreated = DateTime.Now
@@ -193,7 +194,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 entity.Phone = newPhone!;
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
-                entity.Password = dto.Password; // TODO: hashear en produccion
+                entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             if (!string.IsNullOrWhiteSpace(dto.Specialty))
                 entity.Specialty = dto.Specialty.Trim();

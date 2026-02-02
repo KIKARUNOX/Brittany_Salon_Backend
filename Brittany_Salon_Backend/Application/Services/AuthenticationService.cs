@@ -2,6 +2,7 @@
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
@@ -27,7 +28,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (employee != null)
             {
-                if (employee.Password == dto.Password)
+                if (BCrypt.Net.BCrypt.Verify(dto.Password, employee.Password))
                 {
                     return new LoginResponseDto
                     {
@@ -55,7 +56,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (client != null)
             {
-                if (client.Password == dto.Password)
+                if (BCrypt.Net.BCrypt.Verify(dto.Password, client.Password))
                 {
                     return new LoginResponseDto
                     {

@@ -227,7 +227,15 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             // Validar Contraseña (si se proporciona)
             if (!string.IsNullOrWhiteSpace(dto.Password))
+            {
                 errors.AddRange(ValidatePassword(dto.Password));
+
+                // Si se está cambiando la contraseña, la contraseña actual es obligatoria
+                if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
+                {
+                    errors.Add("La contraseña actual es obligatoria para cambiar la contraseña.");
+                }
+            }
 
             // Validar Imagen (si se proporciona)
             if (dto.Image != null)
