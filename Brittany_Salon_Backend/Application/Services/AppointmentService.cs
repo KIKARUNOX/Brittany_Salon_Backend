@@ -113,29 +113,40 @@ namespace Brittany_Salon_Backend.Application.Services
             if (!availability.IsAvailable)
                 throw new InvalidOperationException(availability.Message);
 
-            var productIds = (dto.Products ?? new List<AppointmentProductCreateDto>())
-                .Select(p => p.ProductId)
-                .Distinct()
-                .ToList();
-
-            if (productIds.Count > 0)
+            if (dto.Products != null && dto.Products.Count > 0)
             {
-                var products = await _db.Products
-                    .Where(p => productIds.Contains(p.ProductId))
-                    .ToListAsync();
+                // Obtain unique IDs to validate existence
+                var uniqueProductIds = dto.Products
+                    .Select(p => p.ProductId)
+                    .Distinct()
+                    .ToList();
 
-                if (products.Count != productIds.Count)
+                var products = await _db.Products
+                    .Where(p => uniqueProductIds.Contains(p.ProductId))
+                    .ToDictionaryAsync(p => p.ProductId, p => p);
+
+                if (products.Count != uniqueProductIds.Count)
                     throw new InvalidOperationException("Uno o más productos no existen.");
 
-                foreach (var product in products)
+                // Add products respecting quantities
+                foreach (var productDto in dto.Products)
                 {
-                    _db.AppointmentProducts.Add(new AppointmentProduct
-                    {
-                        AppointmentId = appointment.AppointmentId,
-                        ProductId = product.ProductId
-                    });
+                    if (!products.ContainsKey(productDto.ProductId))
+                        continue;
 
-                    totalCost += product.Price;
+                    var product = products[productDto.ProductId];
+                    var quantity = productDto.Quantity > 0 ? productDto.Quantity : 1;
+
+                    for (int i = 0; i < quantity; i++)
+                    {
+                        _db.AppointmentProducts.Add(new AppointmentProduct
+                        {
+                            AppointmentId = appointment.AppointmentId,
+                            ProductId = product.ProductId
+                        });
+
+                        totalCost += product.Price;
+                    }
                 }
             }
 
@@ -312,22 +323,31 @@ namespace Brittany_Salon_Backend.Application.Services
             totalCost += hairCostPerService * hairServiceCount;
             var totalDurationMinutes = baseDurationMinutes + (hairExtraMinutesPerService * hairServiceCount);
 
-            var productIds = (dto.Products ?? new List<AppointmentProductCreateDto>())
-                .Select(p => p.ProductId)
-                .Distinct()
-                .ToList();
-
-            if (productIds.Count > 0)
+            if (dto.Products != null && dto.Products.Count > 0)
             {
-                var products = await _db.Products
-                    .Where(p => productIds.Contains(p.ProductId))
-                    .ToListAsync();
+                // Obtain unique IDs to validate existence
+                var uniqueProductIds = dto.Products
+                    .Select(p => p.ProductId)
+                    .Distinct()
+                    .ToList();
 
-                if (products.Count != productIds.Count)
+                var products = await _db.Products
+                    .Where(p => uniqueProductIds.Contains(p.ProductId))
+                    .ToDictionaryAsync(p => p.ProductId, p => p);
+
+                if (products.Count != uniqueProductIds.Count)
                     throw new InvalidOperationException("Uno o más productos no existen.");
 
-                foreach (var p in products)
-                    totalCost += p.Price;
+                // Calculate cost respecting quantities
+                foreach (var productDto in dto.Products)
+                {
+                    if (!products.ContainsKey(productDto.ProductId))
+                        continue;
+
+                    var product = products[productDto.ProductId];
+                    var quantity = productDto.Quantity > 0 ? productDto.Quantity : 1;
+                    totalCost += product.Price * quantity;
+                }
             }
 
             var newStart = dto.StartTime;
@@ -373,15 +393,34 @@ namespace Brittany_Salon_Backend.Application.Services
             if (existingApProducts.Count > 0)
                 _db.AppointmentProducts.RemoveRange(existingApProducts);
 
-            if (productIds.Count > 0)
+            if (dto.Products != null && dto.Products.Count > 0)
             {
-                foreach (var pid in productIds)
+                // Obtain product dictionary again for adding
+                var uniqueProductIds = dto.Products
+                    .Select(p => p.ProductId)
+                    .Distinct()
+                    .ToList();
+
+                var products = await _db.Products
+                    .Where(p => uniqueProductIds.Contains(p.ProductId))
+                    .ToDictionaryAsync(p => p.ProductId, p => p);
+
+                // Add products respecting quantities
+                foreach (var productDto in dto.Products)
                 {
-                    _db.AppointmentProducts.Add(new AppointmentProduct
+                    if (!products.ContainsKey(productDto.ProductId))
+                        continue;
+
+                    var quantity = productDto.Quantity > 0 ? productDto.Quantity : 1;
+
+                    for (int i = 0; i < quantity; i++)
                     {
-                        AppointmentId = appointmentId,
-                        ProductId = pid
-                    });
+                        _db.AppointmentProducts.Add(new AppointmentProduct
+                        {
+                            AppointmentId = appointmentId,
+                            ProductId = productDto.ProductId
+                        });
+                    }
                 }
             }
 

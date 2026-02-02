@@ -41,5 +41,7 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         /// <param name="id">ID del cliente a desactivar</param>
         /// <returns>True si se desactivó, False si no existe</returns>
         Task<bool> DeactivateAsync(int id);
+
+        Task<bool> UpdateBalanceAsync(int clientId, decimal pendingBalance);
     }
 }

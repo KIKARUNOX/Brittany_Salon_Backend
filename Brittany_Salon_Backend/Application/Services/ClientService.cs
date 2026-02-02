@@ -280,5 +280,17 @@ namespace Brittany_Salon_Backend.Application.Services
                 CreatedAt = client.CreatedAt
             };
         }
+
+        public async Task<bool> UpdateBalanceAsync(int clientId, decimal pendingBalance)
+        {
+            var client = await _db.Clients.FindAsync(clientId);
+            if (client == null) return false;
+
+            client.PendingBalance = pendingBalance;
+            await _db.SaveChangesAsync();
+            return true;
+        }
     }
+
+
 }
