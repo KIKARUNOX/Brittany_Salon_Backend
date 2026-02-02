@@ -27,7 +27,6 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (employee != null)
             {
-                
                 if (employee.Password == dto.Password)
                 {
                     return new LoginResponseDto
@@ -35,8 +34,13 @@ namespace Brittany_Salon_Backend.Application.Services
                         UserId = employee.Id,
                         Name = employee.Name,
                         Email = employee.Email,
+                        Phone = employee.Phone,
                         Role = "EMPLOYEE",
-                        Token = string.Empty 
+                        Token = string.Empty,
+                        Specialty = employee.Specialty,
+                        ImageUrl = employee.Image,
+                        IsActive = employee.IsActive,
+                        CreatedAt = employee.DateCreated
                     };
                 }
                 else
@@ -58,8 +62,13 @@ namespace Brittany_Salon_Backend.Application.Services
                         UserId = client.ClientId,
                         Name = client.Name,
                         Email = client.Email,
+                        Phone = client.Phone,
                         Role = "CLIENT",
-                        Token = string.Empty
+                        Token = string.Empty,
+                        PendingBalance = client.PendingBalance,
+                        ImageUrl = client.ImageUrl,
+                        IsActive = client.IsActive,
+                        CreatedAt = client.CreatedAt
                     };
                 }
                 else

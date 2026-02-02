@@ -141,13 +141,14 @@ namespace Brittany_Salon_Backend.Application.Validators
             if (products.Any(p => p == null || p.ProductId <= 0))
                 errors.Add("La lista de productos contiene elementos inválidos.");
 
-            var duplicates = products
-                .Where(p => p != null)
-                .GroupBy(p => p.ProductId)
-                .Any(g => g.Key > 0 && g.Count() > 1);
+            // Permite productos duplicados
+            //var duplicates = products
+            //    .Where(p => p != null)
+            //    .GroupBy(p => p.ProductId)
+            //    .Any(g => g.Key > 0 && g.Count() > 1);
 
-            if (duplicates)
-                errors.Add("No se permiten productos duplicados.");
+            //if (duplicates)
+            //    errors.Add("No se permiten productos duplicados.");
 
             return errors;
         }

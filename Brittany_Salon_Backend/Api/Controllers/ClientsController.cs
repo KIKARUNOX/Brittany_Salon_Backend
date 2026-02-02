@@ -194,5 +194,31 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
             return NoContent();
         }
+
+        /// <summary>
+        /// Actualiza el saldo pendiente de un cliente
+        /// </summary>
+        /// <param name="id">ID del cliente</param>
+        /// <param name="balance">Nuevo saldo pendiente</param>
+        /// <returns>NoContent si se actualizó correctamente</returns>
+        [HttpPatch("{id:int}/balance")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateBalance(int id, [FromBody] decimal balance)
+        {
+            var client = await _clientService.GetByIdAsync(id);
+
+            if (client == null)
+                return NotFound(new ErrorResponse { Message = "Cliente no encontrado." });
+
+            var result = await _clientService.UpdateBalanceAsync(id, balance);
+
+            if (!result)
+                return NotFound(new ErrorResponse { Message = "Cliente no encontrado." });
+
+            return NoContent();
+        }
     }
-}
+
+  
+    }
