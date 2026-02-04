@@ -1,0 +1,22 @@
+meta {
+  name: EditarPago
+  type: http
+  seq: 5
+}
+
+put {
+  url: https://localhost:7227/api/payments/1
+  body: json
+  auth: inherit
+}
+
+body {
+  "amount": 75.00,
+  "paymentMethod": "Card",
+  "notes": "Pago completo actualizado"
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
