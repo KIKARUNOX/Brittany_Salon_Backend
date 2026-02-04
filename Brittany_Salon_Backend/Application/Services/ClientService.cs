@@ -67,7 +67,7 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
-        /// Busca clientes por nombre (búsqueda parcial)
+        /// Busca clientes por nombre (bï¿½squeda parcial)
         /// </summary>
         public async Task<List<ClientReadDto>> SearchByNameAsync(string name, bool onlyActive = false)
         {
@@ -95,7 +95,7 @@ namespace Brittany_Salon_Backend.Application.Services
         /// </summary>
         public async Task<ClientReadDto> CreateAsync(ClientCreateDto dto)
         {
-            _logger.LogInfo("Iniciando creación de cliente: {Email}", dto.Email);
+            _logger.LogInfo("Iniciando creaciï¿½n de cliente: {Email}", dto.Email);
 
             // Paso 1: Validaciones de formato y reglas de negocio
             var validationErrors = ClientValidator.ValidateCreate(dto, _logger);
@@ -124,7 +124,7 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Clients.Add(entity);
             await _db.SaveChangesAsync();
 
-            // Paso 5: Procesar imagen si se proporcionó
+            // Paso 5: Procesar imagen si se proporcionï¿½
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessClientImageAsync(entity, dto.Image);
@@ -139,7 +139,7 @@ namespace Brittany_Salon_Backend.Application.Services
         /// </summary>
         public async Task<bool> UpdateAsync(int id, ClientUpdateDto dto)
         {
-            _logger.LogInfo("Iniciando actualización de cliente ID: {Id}", id);
+            _logger.LogInfo("Iniciando actualizaciï¿½n de cliente ID: {Id}", id);
 
             // Paso 1: Buscar cliente
             var entity = await _db.Clients.FindAsync(id);
@@ -154,7 +154,7 @@ namespace Brittany_Salon_Backend.Application.Services
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            // Paso 3: Validar unicidad de email (si se está actualizando)
+            // Paso 3: Validar unicidad de email (si se estï¿½ actualizando)
             var newEmail = !string.IsNullOrWhiteSpace(dto.Email) ? dto.Email.Trim().ToLower() : null;
             await ValidateUniqueConstraintsForUpdateAsync(id, newEmail);
 
@@ -170,15 +170,11 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
-                // Verificar la contrase?a actual
-                if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword!, entity.Password))
-                {
-                    throw new ValidationException(new List<string> { "La contrase?a actual es incorrecta." });
-                }
+
                 entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
             }
 
-            // Paso 5: Procesar imagen si se proporcionó
+            // Paso 5: Procesar imagen si se proporcionï¿½
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessClientImageAsync(entity, dto.Image);
@@ -191,7 +187,7 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
-        /// Desactiva un cliente (eliminación lógica)
+        /// Desactiva un cliente (eliminaciï¿½n lï¿½gica)
         /// </summary>
         public async Task<bool> DeactivateAsync(int id)
         {
@@ -212,20 +208,20 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
-        /// Valida restricciones únicas para creación
+        /// Valida restricciones ï¿½nicas para creaciï¿½n
         /// </summary>
         private async Task ValidateUniqueConstraintsAsync(string email)
         {
-            // Validar email único
+            // Validar email ï¿½nico
             var existingEmail = await _db.Clients
                 .AnyAsync(c => c.Email == email);
 
             if (existingEmail)
-                throw new DuplicateResourceException("email", "El correo electrónico ya está registrado.");
+                throw new DuplicateResourceException("email", "El correo electrï¿½nico ya estï¿½ registrado.");
         }
 
         /// <summary>
-        /// Valida restricciones únicas para actualización
+        /// Valida restricciones ï¿½nicas para actualizaciï¿½n
         /// </summary>
         private async Task ValidateUniqueConstraintsForUpdateAsync(int clientId, string? newEmail)
         {
@@ -235,7 +231,7 @@ namespace Brittany_Salon_Backend.Application.Services
                     .AnyAsync(c => c.Email == newEmail && c.ClientId != clientId);
 
                 if (existingEmail)
-                    throw new DuplicateResourceException("email", "El correo electrónico ya está registrado por otro cliente.");
+                    throw new DuplicateResourceException("email", "El correo electrï¿½nico ya estï¿½ registrado por otro cliente.");
             }
         }
 
@@ -258,7 +254,7 @@ namespace Brittany_Salon_Backend.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError("Error procesando imagen para cliente {Id}", ex, client.ClientId);
-                // No lanzamos excepción para no fallar la creación del cliente
+                // No lanzamos excepciï¿½n para no fallar la creaciï¿½n del cliente
             }
         }
 

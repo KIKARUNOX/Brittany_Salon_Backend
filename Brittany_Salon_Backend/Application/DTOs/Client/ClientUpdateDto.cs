@@ -10,23 +10,21 @@ namespace Brittany_Salon_Backend.Application.DTOs.Client
         public string? Name { get; set; }
 
         [MaxLength(150, ErrorMessage = "El correo no puede exceder 150 caracteres.")]
-        [EmailAddress(ErrorMessage = "El formato del correo electrónico no es válido.")]
+        [EmailAddress(ErrorMessage = "El formato del correo electrï¿½nico no es vï¿½lido.")]
         public string? Email { get; set; }
 
-        [Phone(ErrorMessage = "El formato del teléfono no es válido.")]
-        [MaxLength(20, ErrorMessage = "El teléfono no puede exceder 20 caracteres.")]
+        [Phone(ErrorMessage = "El formato del telï¿½fono no es vï¿½lido.")]
+        [MaxLength(20, ErrorMessage = "El telï¿½fono no puede exceder 20 caracteres.")]
         public string? Phone { get; set; }
 
-        [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres.")]
-        [MaxLength(255, ErrorMessage = "La contraseña no puede exceder 255 caracteres.")]
+        [MinLength(8, ErrorMessage = "La contraseï¿½a debe tener al menos 8 caracteres.")]
+        [MaxLength(255, ErrorMessage = "La contraseï¿½a no puede exceder 255 caracteres.")]
         public string? Password { get; set; }
 
-        [Required(ErrorMessage = "La contraseña actual es obligatoria para cambiar la contraseña.")]
-        public string? CurrentPassword { get; set; }
 
         /// <summary>
         /// Archivo de imagen (multipart/form-data)
-        /// Tamaño máximo: 5MB
+        /// Tamaï¿½o mï¿½ximo: 5MB
         /// Formatos permitidos: JPEG, PNG, GIF, WebP
         /// </summary>
         public IFormFile? Image { get; set; }

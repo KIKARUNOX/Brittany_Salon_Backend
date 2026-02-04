@@ -7,7 +7,7 @@ namespace Brittany_Salon_Backend.Application.Validators
 {
     public static partial class ClientValidator
     {
-        // Tamaño máximo de imagen: 5MB
+        // Tamaï¿½o mï¿½ximo de imagen: 5MB
         private const long MaxImageSize = 5 * 1024 * 1024;
 
         // Extensiones de imagen permitidas
@@ -17,13 +17,13 @@ namespace Brittany_Salon_Backend.Application.Validators
         private static readonly string[] AllowedContentTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
 
         /// <summary>
-        /// Valida todos los campos del DTO de creación de cliente
+        /// Valida todos los campos del DTO de creaciï¿½n de cliente
         /// </summary>
         public static List<string> ValidateCreate(ClientCreateDto dto, IDevLogger? logger = null)
         {
             var errors = new List<string>();
 
-            logger?.LogDebug("Iniciando validación de cliente...");
+            logger?.LogDebug("Iniciando validaciï¿½n de cliente...");
 
             // Validar Nombre
             errors.AddRange(ValidateName(dto.Name));
@@ -31,13 +31,13 @@ namespace Brittany_Salon_Backend.Application.Validators
             // Validar Email
             errors.AddRange(ValidateEmail(dto.Email));
 
-            // Validar Teléfono (opcional)
+            // Validar Telï¿½fono (opcional)
             if (!string.IsNullOrWhiteSpace(dto.Phone))
             {
                 errors.AddRange(ValidatePhone(dto.Phone));
             }
 
-            // Validar Contraseña
+            // Validar Contraseï¿½a
             errors.AddRange(ValidatePassword(dto.Password));
 
             // Validar Imagen (si se proporciona)
@@ -48,11 +48,11 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (errors.Count > 0)
             {
-                logger?.LogWarning("Validación fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+                logger?.LogWarning("Validaciï¿½n fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
             }
             else
             {
-                logger?.LogInfo("Validación exitosa para cliente: {Email}", dto.Email);
+                logger?.LogInfo("Validaciï¿½n exitosa para cliente: {Email}", dto.Email);
             }
 
             return errors;
@@ -80,8 +80,8 @@ namespace Brittany_Salon_Backend.Application.Validators
                 errors.Add("El nombre no puede exceder 100 caracteres.");
 
             // Solo letras, espacios y caracteres especiales comunes
-            if (!Regex.IsMatch(trimmed, @"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-']+$"))
-                errors.Add("El nombre solo puede contener letras, espacios, guiones y apóstrofes.");
+            if (!Regex.IsMatch(trimmed, @"^[a-zA-Zï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\s\-']+$"))
+                errors.Add("El nombre solo puede contener letras, espacios, guiones y apï¿½strofes.");
 
             return errors;
         }
@@ -95,46 +95,46 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (string.IsNullOrWhiteSpace(email))
             {
-                errors.Add("El correo electrónico es obligatorio.");
+                errors.Add("El correo electrï¿½nico es obligatorio.");
                 return errors;
             }
 
             var trimmed = email.Trim();
 
             if (trimmed.Length > 150)
-                errors.Add("El correo electrónico no puede exceder 150 caracteres.");
+                errors.Add("El correo electrï¿½nico no puede exceder 150 caracteres.");
 
-            // Validación básica de formato de email
+            // Validaciï¿½n bï¿½sica de formato de email
             if (!Regex.IsMatch(trimmed, @"^[^\s@]+@[^\s@]+\.[^\s@]+$"))
-                errors.Add("El formato del correo electrónico no es válido.");
+                errors.Add("El formato del correo electrï¿½nico no es vï¿½lido.");
 
             return errors;
         }
 
         /// <summary>
-        /// Valida teléfono (opcional)
+        /// Valida telï¿½fono (opcional)
         /// </summary>
         private static List<string> ValidatePhone(string phone)
         {
             var errors = new List<string>();
 
             if (string.IsNullOrWhiteSpace(phone))
-                return errors; // Teléfono es opcional
+                return errors; // Telï¿½fono es opcional
 
             var trimmed = phone.Trim();
 
             if (trimmed.Length > 20)
-                errors.Add("El teléfono no puede exceder 20 caracteres.");
+                errors.Add("El telï¿½fono no puede exceder 20 caracteres.");
 
-            // Solo dígitos, espacios, guiones, paréntesis
+            // Solo dï¿½gitos, espacios, guiones, parï¿½ntesis
             if (!Regex.IsMatch(trimmed, @"^[\d\s\-\(\)\+]+$"))
-                errors.Add("El teléfono solo puede contener dígitos, espacios, guiones, paréntesis y el símbolo +.");
+                errors.Add("El telï¿½fono solo puede contener dï¿½gitos, espacios, guiones, parï¿½ntesis y el sï¿½mbolo +.");
 
             return errors;
         }
 
         /// <summary>
-        /// Valida contraseña
+        /// Valida contraseï¿½a
         /// </summary>
         private static List<string> ValidatePassword(string password)
         {
@@ -142,28 +142,28 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (string.IsNullOrWhiteSpace(password))
             {
-                errors.Add("La contraseña es obligatoria.");
+                errors.Add("La contraseï¿½a es obligatoria.");
                 return errors;
             }
 
             if (password.Length < 8)
-                errors.Add("La contraseña debe tener al menos 8 caracteres.");
+                errors.Add("La contraseï¿½a debe tener al menos 8 caracteres.");
 
             if (password.Length > 255)
-                errors.Add("La contraseña no puede exceder 255 caracteres.");
+                errors.Add("La contraseï¿½a no puede exceder 255 caracteres.");
 
             // Validar complejidad
             if (!Regex.IsMatch(password, @"[A-Z]"))
-                errors.Add("La contraseña debe contener al menos una letra mayúscula.");
+                errors.Add("La contraseï¿½a debe contener al menos una letra mayï¿½scula.");
 
             if (!Regex.IsMatch(password, @"[a-z]"))
-                errors.Add("La contraseña debe contener al menos una letra minúscula.");
+                errors.Add("La contraseï¿½a debe contener al menos una letra minï¿½scula.");
 
             if (!Regex.IsMatch(password, @"[0-9]"))
-                errors.Add("La contraseña debe contener al menos un número.");
+                errors.Add("La contraseï¿½a debe contener al menos un nï¿½mero.");
 
             if (!Regex.IsMatch(password, @"[\W_]"))
-                errors.Add("La contraseña debe contener al menos un carácter especial (ej. !@#$%^&*).");
+                errors.Add("La contraseï¿½a debe contener al menos un carï¿½cter especial (ej. !@#$%^&*).");
 
             return errors;
         }
@@ -175,43 +175,43 @@ namespace Brittany_Salon_Backend.Application.Validators
         {
             var errors = new List<string>();
 
-            logger?.LogDebug("Validando archivo de imagen: {FileName}, Tamaño: {Size} bytes", image.FileName, image.Length);
+            logger?.LogDebug("Validando archivo de imagen: {FileName}, Tamaï¿½o: {Size} bytes", image.FileName, image.Length);
 
-            // Validar tamaño
+            // Validar tamaï¿½o
             if (image.Length > MaxImageSize)
             {
                 errors.Add("La imagen no puede exceder 5MB.");
                 return errors;
             }
 
-            // Validar extensión
+            // Validar extensiï¿½n
             var extension = Path.GetExtension(image.FileName).ToLower();
             if (!AllowedExtensions.Contains(extension))
             {
-                errors.Add("Formato de imagen no válido. Formatos permitidos: JPEG, PNG, GIF, WebP.");
+                errors.Add("Formato de imagen no vï¿½lido. Formatos permitidos: JPEG, PNG, GIF, WebP.");
                 return errors;
             }
 
             // Validar content type
             if (!AllowedContentTypes.Contains(image.ContentType.ToLower()))
             {
-                errors.Add("Tipo de contenido de imagen no válido.");
+                errors.Add("Tipo de contenido de imagen no vï¿½lido.");
                 return errors;
             }
 
-            logger?.LogDebug("Archivo de imagen válido: {FileName}", image.FileName);
+            logger?.LogDebug("Archivo de imagen vï¿½lido: {FileName}", image.FileName);
             return errors;
         }
 
         /// <summary>
-        /// Valida los campos del DTO de actualización de cliente
+        /// Valida los campos del DTO de actualizaciï¿½n de cliente
         /// Solo valida los campos que se proporcionan (no null)
         /// </summary>
         public static List<string> ValidateUpdate(ClientUpdateDto dto, IDevLogger? logger = null)
         {
             var errors = new List<string>();
 
-            logger?.LogDebug("Iniciando validación de actualización de cliente...");
+            logger?.LogDebug("Iniciando validaciï¿½n de actualizaciï¿½n de cliente...");
 
             // Validar Nombre (si se proporciona)
             if (!string.IsNullOrWhiteSpace(dto.Name))
@@ -221,20 +221,15 @@ namespace Brittany_Salon_Backend.Application.Validators
             if (!string.IsNullOrWhiteSpace(dto.Email))
                 errors.AddRange(ValidateEmail(dto.Email));
 
-            // Validar Teléfono (si se proporciona)
+            // Validar Telï¿½fono (si se proporciona)
             if (!string.IsNullOrWhiteSpace(dto.Phone))
                 errors.AddRange(ValidatePhone(dto.Phone));
 
-            // Validar Contraseña (si se proporciona)
+            // Validar Contraseï¿½a (si se proporciona)
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
                 errors.AddRange(ValidatePassword(dto.Password));
 
-                // Si se está cambiando la contraseña, la contraseña actual es obligatoria
-                if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
-                {
-                    errors.Add("La contraseña actual es obligatoria para cambiar la contraseña.");
-                }
             }
 
             // Validar Imagen (si se proporciona)
@@ -245,7 +240,7 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (errors.Count > 0)
             {
-                logger?.LogWarning("Validación de update fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+                logger?.LogWarning("Validaciï¿½n de update fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
             }
 
             return errors;
