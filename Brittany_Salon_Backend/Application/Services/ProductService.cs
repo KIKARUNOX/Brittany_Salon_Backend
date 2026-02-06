@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Infrastructure.Logging;
-// using Brittany_Salon_Backend.Application.Validators; // si luego haces ProductValidator
+// using Brittany_Salon_Backend.Application.Validators;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
@@ -26,9 +26,16 @@ namespace Brittany_Salon_Backend.Application.Services
 
         public async Task<ProductReadDto> CreateAsync(ProductCreateDto dto)
         {
-            // Si luego haces ProductValidator, lo pones igual que Service:
+            // (Opcional) Validación tipo ServiceValidator
             // var validationErrors = ProductValidator.ValidateCreate(dto, _logger);
             // if (validationErrors.Count > 0) throw new ValidationException(validationErrors);
+
+            var categoryExists = await _db.Categories
+                .AsNoTracking()
+                .AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive);
+
+            if (!categoryExists)
+                throw new InvalidOperationException("La categoría no existe o está inactiva.");
 
             var entity = new Product
             {
@@ -37,17 +44,21 @@ namespace Brittany_Salon_Backend.Application.Services
                 Price = dto.Price,
                 ImageUrl = null,
                 ExpirationDate = dto.ExpirationDate,
-                IsActive = true
+                IsActive = true,
+                CategoryId = dto.CategoryId
             };
 
             _db.Products.Add(entity);
             await _db.SaveChangesAsync();
 
-            // Misma lógica que Service: procesar imagen después de tener ID
+       
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessProductImageAsync(entity, dto.Image);
             }
+
+            
+            await _db.Entry(entity).Reference(p => p.Category).LoadAsync();
 
             return MapToReadDto(entity);
         }
@@ -62,20 +73,19 @@ namespace Brittany_Salon_Backend.Application.Services
                 Price = entity.Price,
                 ImageUrl = entity.ImageUrl,
                 ExpirationDate = entity.ExpirationDate,
-                IsActive = entity.IsActive
+                IsActive = entity.IsActive,
+                CategoryId = entity.CategoryId,
+                CategoryName = entity.Category?.CategoryName ?? string.Empty
             };
         }
 
         private async Task ProcessProductImageAsync(Product entity, IFormFile imageFile)
         {
-            // Igual que Service: ProcessAndSaveImageAsync(file, "imageService", id)
-            // Si quieres otra carpeta/clave, cambia "imageProduct" o algo, pero lo dejo similar:
             string imageUrl = await _imageService.ProcessAndSaveImageAsync(imageFile, "imageProduct", entity.ProductId);
             entity.ImageUrl = imageUrl;
             await _db.SaveChangesAsync();
         }
 
-        // Para el futuro (cuando hagamos editar producto):
         private async Task UpdateProductImageAsync(Product entity, IFormFile newImage)
         {
             if (!string.IsNullOrWhiteSpace(entity.ImageUrl))

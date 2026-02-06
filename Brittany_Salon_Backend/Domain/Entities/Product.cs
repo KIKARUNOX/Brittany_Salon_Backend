@@ -33,6 +33,13 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [Column("isActive")]
         public bool IsActive { get; set; } = true;
 
+        [Required]
+        [Column("categoryId")]
+        public int CategoryId { get; set; }
+
+        [ForeignKey(nameof(CategoryId))]
+        public Category? Category { get; set; }
+
         public ICollection<AppointmentProduct> AppointmentProducts { get; set; } = new List<AppointmentProduct>();
     }
 }
