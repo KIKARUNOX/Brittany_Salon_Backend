@@ -19,6 +19,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public DbSet<AppointmentProduct> AppointmentProducts { get; set; } = null!;
         public DbSet<Payment> Payments { get; set; } = null!;
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
