@@ -44,6 +44,7 @@ builder.Services.AddScoped<IAppointmentService, AppointmentService>(); //Inyecci
 builder.Services.AddScoped<IClientService, ClientService>(); // Inyección de dependencias Client
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyección de dependencias Payment
+builder.Services.AddScoped<IProductService, ProductService>(); // Inyección de dependencias Product
 
 var app = builder.Build();
 

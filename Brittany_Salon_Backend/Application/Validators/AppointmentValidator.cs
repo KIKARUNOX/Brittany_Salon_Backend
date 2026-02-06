@@ -88,6 +88,22 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             return errors;
         }
+        private static DateTime GetNowCostaRica()
+        {
+            var utcNow = DateTime.UtcNow;
+
+            try
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Costa_Rica");
+                return TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+            }
+            catch
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("Central America Standard Time");
+                return TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+            }
+        }
+
 
         public static List<string> ValidateNotPastDate(DateTime startTime)
         {
@@ -96,7 +112,7 @@ namespace Brittany_Salon_Backend.Application.Validators
             if (startTime == default)
                 return errors;
 
-            var now = DateTime.Now;
+            var now = GetNowCostaRica();
 
             if (startTime.Date < now.Date)
                 errors.Add("No se puede agendar una cita en días anteriores.");
@@ -106,6 +122,7 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             return errors;
         }
+
 
         public static List<string> ValidateServiceList(List<AppointmentServiceCreateDto>? services)
         {
