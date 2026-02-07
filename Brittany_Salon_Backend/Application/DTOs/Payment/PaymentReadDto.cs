@@ -7,7 +7,7 @@ namespace Brittany_Salon_Backend.Application.DTOs.Payment
         public decimal Amount { get; set; }
         public DateTime PaymentDate { get; set; }
         public string PaymentMethod { get; set; } = string.Empty;
-        public string? Notes { get; set; }
+        public string? PaymentStatus { get; set; }
         public bool IsActive { get; set; }
     }
 }

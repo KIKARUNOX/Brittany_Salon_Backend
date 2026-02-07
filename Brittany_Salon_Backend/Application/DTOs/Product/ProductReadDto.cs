@@ -17,5 +17,9 @@ namespace Brittany_Salon_Backend.Application.DTOs.Product
         public DateTime? ExpirationDate { get; set; }
 
         public bool IsActive { get; set; }
+
+        public int CategoryId { get; set; }
+
+        public string CategoryName { get; set; } = string.Empty;
     }
 }

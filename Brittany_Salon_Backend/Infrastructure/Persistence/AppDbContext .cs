@@ -1,7 +1,5 @@
 ﻿using Brittany_Salon_Backend.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace Brittany_Salon_Backend.Infrastructure.Persistence
 {
@@ -13,18 +11,16 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public DbSet<Employee> Employees { get; set; } = null!;
         public DbSet<Clients> Clients { get; set; } = null!;
         public DbSet<Appointment> Appointments { get; set; } = null!;
-
         public DbSet<AppointmentService> AppointmentServices { get; set; } = null!;
         public DbSet<Product> Products { get; set; } = null!;
         public DbSet<AppointmentProduct> AppointmentProducts { get; set; } = null!;
         public DbSet<Payment> Payments { get; set; } = null!;
-
+        public DbSet<Category> Categories { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Mapeo explícito para Service
             modelBuilder.Entity<Service>(entity =>
             {
                 entity.ToTable("Service");
@@ -54,7 +50,6 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasDefaultValue(true);
             });
 
-            // Mapeo explícito para Employee
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.ToTable("Employee");
@@ -82,7 +77,6 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasDefaultValue(true);
             });
 
-            // Mapeo explícito para Client
             modelBuilder.Entity<Clients>(entity =>
             {
                 entity.ToTable("Client");
@@ -118,7 +112,6 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasDefaultValueSql("GETDATE()");
             });
 
-            //Mapeo explícito para Appointment
             modelBuilder.Entity<Appointment>(entity =>
             {
                 entity.ToTable("Appointment");
@@ -154,7 +147,6 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Mapeo explícito para AppointmentService
             modelBuilder.Entity<AppointmentService>(entity =>
             {
                 entity.ToTable("AppointmentService");
@@ -172,7 +164,6 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasForeignKey(x => x.ServiceId);
             });
 
-            // Mapeo explícito para Product
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("Product");
@@ -197,9 +188,16 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
 
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);
+
+                entity.Property(x => x.CategoryId)
+                      .IsRequired();
+
+                entity.HasOne(x => x.Category)
+                      .WithMany(c => c.Products)
+                      .HasForeignKey(x => x.CategoryId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Mapeo explícito para AppointmentProduct
             modelBuilder.Entity<AppointmentProduct>(entity =>
             {
                 entity.ToTable("AppointmentProduct");
@@ -214,7 +212,6 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasForeignKey(x => x.ProductId);
             });
 
-            // Mapeo explícito para Payment
             modelBuilder.Entity<Payment>(entity =>
             {
                 entity.ToTable("Payment");
@@ -231,8 +228,8 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.Property(x => x.PaymentMethod)
                       .HasMaxLength(50);
 
-                entity.Property(x => x.Notes)
-                      .HasMaxLength(255);
+                entity.Property(x => x.PaymentStatus)
+                      .HasMaxLength(50);
 
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);
@@ -243,6 +240,24 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.ToTable("Category");
+                entity.HasKey(x => x.CategoryId);
+
+                entity.Property(x => x.CategoryName)
+                      .HasMaxLength(50)
+                      .IsRequired();
+
+                entity.Property(x => x.CategoryDescription)
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.IsActive)
+                      .HasDefaultValue(true);
+
+                entity.HasIndex(x => x.CategoryName)
+                      .IsUnique();
+            });
         }
     }
 }

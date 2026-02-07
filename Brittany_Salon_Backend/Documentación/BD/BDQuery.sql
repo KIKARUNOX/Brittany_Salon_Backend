@@ -106,9 +106,9 @@ CREATE TABLE Payment (
     paymentId INT IDENTITY PRIMARY KEY,
     appointmentId INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
+    paymentStatus NVARCHAR(50),
     paymentDate DATETIME DEFAULT GETDATE(),
     paymentMethod NVARCHAR(50),
-    notes NVARCHAR(255),
     isActive BIT DEFAULT 1,
     CONSTRAINT FK_Payment_Appointment
         FOREIGN KEY (appointmentId) REFERENCES Appointment(appointmentId)
