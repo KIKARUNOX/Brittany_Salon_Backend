@@ -20,6 +20,10 @@ namespace Brittany_Salon_Backend.Application.DTOs.Product
 
         public DateTime? ExpirationDate { get; set; }
 
+        [Required(ErrorMessage = "La categoría del producto es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "La categoría seleccionada no es válida.")]
+        public int CategoryId { get; set; }
+
         [Required(ErrorMessage = "La imagen del producto es obligatoria.")]
         public IFormFile Image { get; set; } = default!;
     }
