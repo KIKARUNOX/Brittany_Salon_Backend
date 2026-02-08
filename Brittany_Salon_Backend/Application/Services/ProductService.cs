@@ -175,6 +175,70 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+        public async Task<ProductReadDto?> UpdateAsync(int id, ProductUpdateDto dto)
+        {
+            var entity = await _db.Products.FindAsync(id);
+            if (entity is null) return null;
+
+            var categoryExists = await _db.Categories
+                .AsNoTracking()
+                .AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive);
+
+            if (!categoryExists)
+                throw new InvalidOperationException("La categoría no existe o está inactiva.");
+
+            entity.ProductName = dto.ProductName.Trim();
+            entity.ProductDescription = dto.ProductDescription?.Trim();
+            entity.Price = dto.Price;
+            entity.ExpirationDate = dto.ExpirationDate;
+            entity.CategoryId = dto.CategoryId;
+            entity.IsActive = dto.IsActive;
+
+            if (dto.Image != null && dto.Image.Length > 0)
+            {
+                await UpdateProductImageAsync(entity, dto.Image);
+            }
+
+            await _db.SaveChangesAsync();
+
+            await _db.Entry(entity).Reference(p => p.Category).LoadAsync();
+
+            return MapToReadDto(entity);
+        }
+
+        public async Task<bool> DeactivateAsync(int id)
+        {
+            var entity = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == id);
+            if (entity is null) return false;
+
+            var hasHistory = await HasAssociatedAppointmentsAsync(id);
+            if (hasHistory)
+                throw new InvalidOperationException("No se puede desactivar el producto porque está asociado a una o más citas.");
+
+            entity.IsActive = false;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReactivateAsync(int id)
+        {
+            var entity = await _db.Products.FindAsync(id);
+            if (entity is null) return false;
+
+            if (entity.IsActive) return true;
+
+            entity.IsActive = true;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<bool> HasAssociatedAppointmentsAsync(int productId)
+        {
+            return await _db.AppointmentProducts
+                .AsNoTracking()
+                .AnyAsync(ap => ap.ProductId == productId);
+        }
+
 
 
 
