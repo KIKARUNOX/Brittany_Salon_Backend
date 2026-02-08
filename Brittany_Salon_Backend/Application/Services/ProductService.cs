@@ -206,6 +206,40 @@ namespace Brittany_Salon_Backend.Application.Services
             return MapToReadDto(entity);
         }
 
+        public async Task<bool> DeactivateAsync(int id)
+        {
+            var entity = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == id);
+            if (entity is null) return false;
+
+            var hasHistory = await HasAssociatedAppointmentsAsync(id);
+            if (hasHistory)
+                throw new InvalidOperationException("No se puede desactivar el producto porque está asociado a una o más citas.");
+
+            entity.IsActive = false;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReactivateAsync(int id)
+        {
+            var entity = await _db.Products.FindAsync(id);
+            if (entity is null) return false;
+
+            if (entity.IsActive) return true;
+
+            entity.IsActive = true;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<bool> HasAssociatedAppointmentsAsync(int productId)
+        {
+            return await _db.AppointmentProducts
+                .AsNoTracking()
+                .AnyAsync(ap => ap.ProductId == productId);
+        }
+
+
 
 
     }
