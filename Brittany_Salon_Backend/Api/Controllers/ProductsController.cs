@@ -26,9 +26,28 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult GetById(int id)
+        public async Task<ActionResult<ProductReadDto>> GetById(int id)
         {
-            return Ok();
+            var result = await _productService.GetByIdAsync(id);
+            if (result is null) return NotFound("Producto no encontrado.");
+            return Ok(result);
         }
+
+        [HttpGet]
+        public async Task<ActionResult<List<ProductReadDto>>> GetAll([FromQuery] bool? onlyActive)
+        {
+            var result = await _productService.GetAllAsync(onlyActive);
+            return Ok(result);
+        }
+        [HttpGet("search")]
+        public async Task<ActionResult<List<ProductReadDto>>> SearchByName(
+        [FromQuery] string name,
+        [FromQuery] bool? onlyActive)
+        {
+            var result = await _productService.SearchByNameAsync(name, onlyActive);
+            return Ok(result);
+        }
+
+
     }
 }

@@ -96,5 +96,87 @@ namespace Brittany_Salon_Backend.Application.Services
             string imageUrl = await _imageService.ProcessAndSaveImageAsync(newImage, "imageProduct", entity.ProductId);
             entity.ImageUrl = imageUrl;
         }
+        public async Task<List<ProductReadDto>> GetAllAsync(bool? onlyActive = null)
+        {
+            IQueryable<Product> query = _db.Products
+            .AsNoTracking()
+            .Include(p => p.Category);
+
+            if (onlyActive.HasValue)
+                query = query.Where(p => p.IsActive == onlyActive.Value);
+
+            return await query
+                .OrderBy(p => p.ProductName)
+                .Select(p => new ProductReadDto
+                {
+                    ProductId = p.ProductId,
+                    ProductName = p.ProductName,
+                    ProductDescription = p.ProductDescription,
+                    Price = p.Price,
+                    ImageUrl = p.ImageUrl,
+                    ExpirationDate = p.ExpirationDate,
+                    IsActive = p.IsActive,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.Category != null ? p.Category.CategoryName : string.Empty
+                })
+                .ToListAsync();
+        }
+
+        public async Task<ProductReadDto?> GetByIdAsync(int id)
+        {
+            var p = await _db.Products
+                .AsNoTracking()
+                .Include(x => x.Category)
+                .FirstOrDefaultAsync(x => x.ProductId == id);
+
+            if (p is null) return null;
+
+            return new ProductReadDto
+            {
+                ProductId = p.ProductId,
+                ProductName = p.ProductName,
+                ProductDescription = p.ProductDescription,
+                Price = p.Price,
+                ImageUrl = p.ImageUrl,
+                ExpirationDate = p.ExpirationDate,
+                IsActive = p.IsActive,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category != null ? p.Category.CategoryName : string.Empty
+            };
+        }
+        public async Task<List<ProductReadDto>> SearchByNameAsync(string name, bool? onlyActive = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return new List<ProductReadDto>();
+
+            var searchTerm = name.Trim().ToLower();
+
+            IQueryable<Product> query = _db.Products
+                .AsNoTracking()
+                .Include(p => p.Category);
+
+            if (onlyActive.HasValue)
+                query = query.Where(p => p.IsActive == onlyActive.Value);
+
+            return await query
+                .Where(p => p.ProductName.ToLower().Contains(searchTerm))
+                .OrderBy(p => p.ProductName)
+                .Select(p => new ProductReadDto
+                {
+                    ProductId = p.ProductId,
+                    ProductName = p.ProductName,
+                    ProductDescription = p.ProductDescription,
+                    Price = p.Price,
+                    ImageUrl = p.ImageUrl,
+                    ExpirationDate = p.ExpirationDate,
+                    IsActive = p.IsActive,
+                    CategoryId = p.CategoryId,
+                    CategoryName = p.Category != null ? p.Category.CategoryName : string.Empty
+                })
+                .ToListAsync();
+        }
+
+
+
     }
 }
