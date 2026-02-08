@@ -175,6 +175,36 @@ namespace Brittany_Salon_Backend.Application.Services
                 })
                 .ToListAsync();
         }
+        public async Task<ProductReadDto?> UpdateAsync(int id, ProductUpdateDto dto)
+        {
+            var entity = await _db.Products.FindAsync(id);
+            if (entity is null) return null;
+
+            var categoryExists = await _db.Categories
+                .AsNoTracking()
+                .AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive);
+
+            if (!categoryExists)
+                throw new InvalidOperationException("La categoría no existe o está inactiva.");
+
+            entity.ProductName = dto.ProductName.Trim();
+            entity.ProductDescription = dto.ProductDescription?.Trim();
+            entity.Price = dto.Price;
+            entity.ExpirationDate = dto.ExpirationDate;
+            entity.CategoryId = dto.CategoryId;
+            entity.IsActive = dto.IsActive;
+
+            if (dto.Image != null && dto.Image.Length > 0)
+            {
+                await UpdateProductImageAsync(entity, dto.Image);
+            }
+
+            await _db.SaveChangesAsync();
+
+            await _db.Entry(entity).Reference(p => p.Category).LoadAsync();
+
+            return MapToReadDto(entity);
+        }
 
 
 

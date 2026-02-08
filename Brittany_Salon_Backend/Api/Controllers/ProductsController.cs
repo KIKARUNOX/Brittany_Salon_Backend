@@ -47,6 +47,14 @@ namespace Brittany_Salon_Backend.Api.Controllers
             var result = await _productService.SearchByNameAsync(name, onlyActive);
             return Ok(result);
         }
+        [HttpPut("{id:int}")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<ProductReadDto>> Update(int id, [FromForm] ProductUpdateDto dto)
+        {
+            var updated = await _productService.UpdateAsync(id, dto);
+            if (updated is null) return NotFound("Producto no encontrado.");
+            return Ok(updated);
+        }
 
 
     }

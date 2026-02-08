@@ -8,6 +8,7 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<List<ProductReadDto>> GetAllAsync(bool? onlyActive = false);
         Task<ProductReadDto?> GetByIdAsync(int id);
         Task<List<ProductReadDto>> SearchByNameAsync(string name, bool? onlyActive = null);
+        Task<ProductReadDto?> UpdateAsync(int id, ProductUpdateDto dto);
 
     }
 }
