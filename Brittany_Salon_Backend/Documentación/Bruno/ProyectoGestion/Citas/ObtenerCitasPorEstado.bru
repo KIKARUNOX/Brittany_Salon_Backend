@@ -1,0 +1,19 @@
+meta {
+  name: ObtenerCitasPorEstado
+  type: http
+  seq: 4
+}
+
+get {
+  url: https://localhost:7227/api/appointments/by-status?status=Pendiente
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: Pendiente
+}
+
+settings {
+  encodeUrl: true
+}

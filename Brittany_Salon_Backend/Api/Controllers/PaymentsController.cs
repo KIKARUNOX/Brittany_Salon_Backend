@@ -29,6 +29,19 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
+        /// Obtiene todos los pagos incluyendo inactivos
+        /// </summary>
+        /// <returns>Lista de todos los pagos</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("all")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetAllWithInactive()
+        {
+            var payments = await _paymentService.GetAllWithInactiveAsync();
+            return Ok(payments);
+        }
+
+        /// <summary>
         /// Obtiene un pago por su ID
         /// </summary>
         /// <param name="id">ID del pago</param>
@@ -59,6 +72,49 @@ namespace Brittany_Salon_Backend.Api.Controllers
         public async Task<ActionResult<List<PaymentReadDto>>> GetByAppointmentId(int appointmentId)
         {
             var payments = await _paymentService.GetByAppointmentIdAsync(appointmentId);
+            return Ok(payments);
+        }
+
+        /// <summary>
+        /// Obtiene pagos por ID de cliente
+        /// </summary>
+        /// <param name="clientId">ID del cliente</param>
+        /// <returns>Lista de pagos para el cliente</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("by-client/{clientId:int}")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetByClientId(int clientId)
+        {
+            var payments = await _paymentService.GetByClientIdAsync(clientId);
+            return Ok(payments);
+        }
+
+        /// <summary>
+        /// Obtiene pagos por rango de fechas
+        /// </summary>
+        /// <param name="startDate">Fecha de inicio</param>
+        /// <param name="endDate">Fecha de fin</param>
+        /// <returns>Lista de pagos en el rango</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("by-date")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var payments = await _paymentService.GetByDateRangeAsync(startDate, endDate);
+            return Ok(payments);
+        }
+
+        /// <summary>
+        /// Obtiene pagos por estado
+        /// </summary>
+        /// <param name="active">Estado activo (true) o inactivo (false)</param>
+        /// <returns>Lista de pagos con el estado</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("by-status")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetByStatus([FromQuery] bool active)
+        {
+            var payments = await _paymentService.GetByStatusAsync(active);
             return Ok(payments);
         }
 
@@ -131,6 +187,19 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return NotFound(new { message = "Pago no encontrado." });
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Obtiene todos los pagos ordenados por fecha descendente
+        /// </summary>
+        /// <returns>Lista de pagos ordenados por fecha</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("ordered-by-date")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetOrderedByDate()
+        {
+            var payments = await _paymentService.GetAllWithInactiveAsync();
+            return Ok(payments);
         }
     }
 }

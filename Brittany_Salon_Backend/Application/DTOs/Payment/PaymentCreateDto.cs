@@ -13,6 +13,7 @@ namespace Brittany_Salon_Backend.Application.DTOs.Payment
 
         [Required(ErrorMessage = "El método de pago es obligatorio.")]
         [MaxLength(50, ErrorMessage = "El método de pago no puede exceder 50 caracteres.")]
+        [AllowedValues("Efectivo", "SINPE", ErrorMessage = "El método de pago debe ser 'Efectivo' o 'SINPE'.")]
         public string PaymentMethod { get; set; } = string.Empty;
 
         [MaxLength(50, ErrorMessage = "El estado del pago no puede exceder 50 caracteres.")]
