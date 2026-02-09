@@ -36,5 +36,34 @@ namespace Brittany_Salon_Backend.Api.Controllers
             var created = await _categoryService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.CategoryId }, created);
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<CategoryReadDto>> Update(int id,[FromBody] CategoryUpdateDto dto)
+        {
+            var updated = await _categoryService.UpdateAsync(id, dto);
+
+            if (updated is null)
+                return NotFound("Categoría no encontrada.");
+
+            return Ok(updated);
+        }
+
+        [HttpPatch("{id:int}/deactivate")]
+        public async Task<IActionResult> Deactivate(int id)
+        {
+            var ok = await _categoryService.DeactivateAsync(id);
+            if (!ok) return NotFound("Categoría no encontrada.");
+            return NoContent();
+        }
+
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            var ok = await _categoryService.ReactivateAsync(id);
+            if (!ok) return NotFound("Categoría no encontrada.");
+            return NoContent();
+        }
+
+
     }
 }

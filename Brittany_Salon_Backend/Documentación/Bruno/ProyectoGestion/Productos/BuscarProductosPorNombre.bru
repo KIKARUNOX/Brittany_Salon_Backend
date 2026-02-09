@@ -1,0 +1,19 @@
+meta {
+  name: BuscarProductosPorNombre
+  type: http
+  seq: 4
+}
+
+get {
+  url: https://localhost:7227/api/products/search?name=shampoo
+  body: none
+  auth: inherit
+}
+
+params:query {
+  name: shampoo
+}
+
+settings {
+  encodeUrl: true
+}

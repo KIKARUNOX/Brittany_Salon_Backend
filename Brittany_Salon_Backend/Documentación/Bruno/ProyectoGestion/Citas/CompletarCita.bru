@@ -1,0 +1,15 @@
+meta {
+  name: CompletarCita
+  type: http
+  seq: 9
+}
+
+put {
+  url: https://localhost:7227/api/appointments/10/complete
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
