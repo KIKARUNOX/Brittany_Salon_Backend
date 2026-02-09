@@ -143,7 +143,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 Amount = dto.Amount,
                 PaymentDate = DateTime.Now,
                 PaymentMethod = dto.PaymentMethod,
-                Notes = dto.Notes,
+                PaymentStatus = dto.PaymentStatus,
                 IsActive = dto.IsActive ?? true
             };
 
@@ -188,8 +188,8 @@ namespace Brittany_Salon_Backend.Application.Services
             if (!string.IsNullOrWhiteSpace(dto.PaymentMethod))
                 entity.PaymentMethod = dto.PaymentMethod;
 
-            if (dto.Notes != null)
-                entity.Notes = dto.Notes;
+            if (dto.PaymentStatus != null)
+                entity.PaymentStatus = dto.PaymentStatus;
 
             if (dto.IsActive.HasValue)
                 entity.IsActive = dto.IsActive.Value;
@@ -227,7 +227,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 Amount = payment.Amount,
                 PaymentDate = payment.PaymentDate,
                 PaymentMethod = payment.PaymentMethod,
-                Notes = payment.Notes,
+                PaymentStatus = payment.PaymentStatus,
                 IsActive = payment.IsActive
             };
         }

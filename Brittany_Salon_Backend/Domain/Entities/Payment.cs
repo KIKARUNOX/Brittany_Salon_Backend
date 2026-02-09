@@ -26,9 +26,9 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [Column("paymentMethod")]
         public string PaymentMethod { get; set; } = string.Empty; // e.g., "Cash", "Card", "Transfer"
 
-        [MaxLength(255)]
-        [Column("notes")]
-        public string? Notes { get; set; }
+        [MaxLength(50)]
+        [Column("paymentStatus")]
+        public string? PaymentStatus { get; set; }
 
         [Column("isActive")]
         public bool IsActive { get; set; } = true;
