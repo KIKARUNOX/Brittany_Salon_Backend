@@ -20,8 +20,5 @@ namespace Brittany_Salon_Backend.Application.DTOs.Payment
         public string? PaymentStatus { get; set; }
 
         public bool? IsActive { get; set; } = true;
-        
-        [MaxLength(50, ErrorMessage = "El estado del pago no puede exceder 50 caracteres.")]
-        public string? PaymentStatus { get; set; } = string.Empty;
     }
 }

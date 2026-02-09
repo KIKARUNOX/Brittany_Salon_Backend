@@ -10,6 +10,9 @@ namespace Brittany_Salon_Backend.Application.DTOs.Payment
         [MaxLength(50, ErrorMessage = "El método de pago no puede exceder 50 caracteres.")]
         public string? PaymentMethod { get; set; }
 
+        [MaxLength(255, ErrorMessage = "Las notas no pueden exceder 255 caracteres.")]
+        public string? Notes { get; set; }
+
         [MaxLength(50, ErrorMessage = "El estado del pago no puede exceder 50 caracteres.")]
         public string? PaymentStatus { get; set; }
 
