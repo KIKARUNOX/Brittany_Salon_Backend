@@ -33,6 +33,20 @@ namespace Brittany_Salon_Backend.Application.Services
             return payments;
         }
 
+        public async Task<List<PaymentReadDto>> GetAllWithInactiveAsync()
+        {
+            _logger.LogInfo("Obteniendo todos los pagos incluyendo inactivos");
+
+            var payments = await _db.Payments
+                .AsNoTracking()
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => MapToReadDto(p))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} pagos", payments.Count);
+            return payments;
+        }
+
         public async Task<PaymentReadDto?> GetByIdAsync(int id)
         {
             _logger.LogInfo("Buscando pago con ID: {Id}", id);
@@ -63,6 +77,21 @@ namespace Brittany_Salon_Backend.Application.Services
                 .ToListAsync();
 
             _logger.LogInfo("Se encontraron {Count} pagos para la cita", payments.Count);
+            return payments;
+        }
+
+        public async Task<List<PaymentReadDto>> GetByClientIdAsync(int clientId)
+        {
+            _logger.LogInfo("Buscando pagos para cliente ID: {ClientId}", clientId);
+
+            var payments = await _db.Payments
+                .AsNoTracking()
+                .Where(p => p.Appointment.ClientId == clientId && p.IsActive)
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => MapToReadDto(p))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} pagos para el cliente", payments.Count);
             return payments;
         }
 

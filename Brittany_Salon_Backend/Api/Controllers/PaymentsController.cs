@@ -29,6 +29,19 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
+        /// Obtiene todos los pagos incluyendo inactivos
+        /// </summary>
+        /// <returns>Lista de todos los pagos</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("all")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetAllWithInactive()
+        {
+            var payments = await _paymentService.GetAllWithInactiveAsync();
+            return Ok(payments);
+        }
+
+        /// <summary>
         /// Obtiene un pago por su ID
         /// </summary>
         /// <param name="id">ID del pago</param>
@@ -59,6 +72,20 @@ namespace Brittany_Salon_Backend.Api.Controllers
         public async Task<ActionResult<List<PaymentReadDto>>> GetByAppointmentId(int appointmentId)
         {
             var payments = await _paymentService.GetByAppointmentIdAsync(appointmentId);
+            return Ok(payments);
+        }
+
+        /// <summary>
+        /// Obtiene pagos por ID de cliente
+        /// </summary>
+        /// <param name="clientId">ID del cliente</param>
+        /// <returns>Lista de pagos para el cliente</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("by-client/{clientId:int}")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetByClientId(int clientId)
+        {
+            var payments = await _paymentService.GetByClientIdAsync(clientId);
             return Ok(payments);
         }
 
