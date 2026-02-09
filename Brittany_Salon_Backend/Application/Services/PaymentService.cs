@@ -95,6 +95,36 @@ namespace Brittany_Salon_Backend.Application.Services
             return payments;
         }
 
+        public async Task<List<PaymentReadDto>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            _logger.LogInfo("Buscando pagos en rango de fechas: {StartDate} a {EndDate}", startDate, endDate);
+
+            var payments = await _db.Payments
+                .AsNoTracking()
+                .Where(p => p.PaymentDate >= startDate && p.PaymentDate <= endDate)
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => MapToReadDto(p))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} pagos en el rango", payments.Count);
+            return payments;
+        }
+
+        public async Task<List<PaymentReadDto>> GetByStatusAsync(bool isActive)
+        {
+            _logger.LogInfo("Buscando pagos con estado activo: {IsActive}", isActive);
+
+            var payments = await _db.Payments
+                .AsNoTracking()
+                .Where(p => p.IsActive == isActive)
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => MapToReadDto(p))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} pagos con el estado", payments.Count);
+            return payments;
+        }
+
         public async Task<PaymentReadDto> CreateAsync(PaymentCreateDto dto)
         {
             _logger.LogInfo("Iniciando creación de pago para cita ID: {AppointmentId}", dto.AppointmentId);

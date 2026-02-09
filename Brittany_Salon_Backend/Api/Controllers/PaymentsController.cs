@@ -90,6 +90,35 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
+        /// Obtiene pagos por rango de fechas
+        /// </summary>
+        /// <param name="startDate">Fecha de inicio</param>
+        /// <param name="endDate">Fecha de fin</param>
+        /// <returns>Lista de pagos en el rango</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("by-date")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetByDateRange([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var payments = await _paymentService.GetByDateRangeAsync(startDate, endDate);
+            return Ok(payments);
+        }
+
+        /// <summary>
+        /// Obtiene pagos por estado
+        /// </summary>
+        /// <param name="active">Estado activo (true) o inactivo (false)</param>
+        /// <returns>Lista de pagos con el estado</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("by-status")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetByStatus([FromQuery] bool active)
+        {
+            var payments = await _paymentService.GetByStatusAsync(active);
+            return Ok(payments);
+        }
+
+        /// <summary>
         /// Registra un nuevo pago
         /// </summary>
         /// <param name="dto">Datos del pago a registrar</param>

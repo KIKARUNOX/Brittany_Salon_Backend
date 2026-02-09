@@ -9,6 +9,8 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<List<PaymentReadDto>> GetByAppointmentIdAsync(int appointmentId);
         Task<List<PaymentReadDto>> GetByClientIdAsync(int clientId);
         Task<List<PaymentReadDto>> GetAllWithInactiveAsync();
+        Task<List<PaymentReadDto>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<List<PaymentReadDto>> GetByStatusAsync(bool isActive);
         Task<PaymentReadDto> CreateAsync(PaymentCreateDto dto);
         Task<bool> UpdateAsync(int id, PaymentUpdateDto dto);
         Task<bool> DeleteAsync(int id);
