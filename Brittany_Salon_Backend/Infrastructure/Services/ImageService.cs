@@ -49,19 +49,30 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
             var fileName = $"{category}_{entityId}_{Guid.NewGuid():N}.webp";
             var filePath = Path.Combine(categoryDirectory, fileName);
 
-            using var inputStream = imageFile.OpenReadStream();
-            using var image = await Image.LoadAsync(inputStream);
-
-            image.Mutate(x => x.Resize(new ResizeOptions
+            try
             {
-                Size = new Size(MaxImageWidth, MaxImageHeight),
-                Mode = ResizeMode.Max
-            }));
+                using var inputStream = imageFile.OpenReadStream();
+                using var image = await Image.LoadAsync(inputStream);
 
-            await image.SaveAsync(filePath, new WebpEncoder { Quality = 75 });
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Size = new Size(MaxImageWidth, MaxImageHeight),
+                    Mode = ResizeMode.Max
+                }));
 
-            // URL publica
-            return $"/{category}/{fileName}";
+                await image.SaveAsync(filePath, new WebpEncoder { Quality = 75 });
+
+                // URL publica
+                return $"/{category}/{fileName}";
+            }
+            catch (OutOfMemoryException)
+            {
+                throw new ArgumentException("La imagen es demasiado grande para procesar. Intente con una imagen mas pequena.");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Error al procesar la imagen.", ex);
+            }
         }
 
         public bool DeleteImage(string imageUrl)

@@ -130,6 +130,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
                     Field = ex.Field
                 });
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ErrorResponse { Message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -174,6 +178,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
                     Message = ex.Message,
                     Field = ex.Field
                 });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ErrorResponse { Message = ex.Message });
             }
         }
 
