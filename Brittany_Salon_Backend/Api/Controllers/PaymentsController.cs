@@ -188,5 +188,18 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
             return NoContent();
         }
+
+        /// <summary>
+        /// Obtiene todos los pagos ordenados por fecha descendente
+        /// </summary>
+        /// <returns>Lista de pagos ordenados por fecha</returns>
+        /// <response code="200">Lista de pagos</response>
+        [HttpGet("ordered-by-date")]
+        [ProducesResponseType(typeof(List<PaymentReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<PaymentReadDto>>> GetOrderedByDate()
+        {
+            var payments = await _paymentService.GetAllWithInactiveAsync();
+            return Ok(payments);
+        }
     }
 }
