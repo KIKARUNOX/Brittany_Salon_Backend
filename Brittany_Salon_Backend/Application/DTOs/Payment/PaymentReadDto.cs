@@ -9,5 +9,6 @@ namespace Brittany_Salon_Backend.Application.DTOs.Payment
         public string PaymentMethod { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public bool IsActive { get; set; }
+        public string? CancellationReason { get; set; }
     }
 }

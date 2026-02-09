@@ -106,6 +106,22 @@ namespace Brittany_Salon_Backend.Application.Services
                 return false;
             }
 
+            // Validar datos modificados
+            if (dto.Amount.HasValue && dto.Amount.Value <= 0)
+            {
+                throw new ArgumentException("El monto debe ser mayor a 0.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.PaymentMethod) && dto.PaymentMethod != "Efectivo" && dto.PaymentMethod != "SINPE")
+            {
+                throw new ArgumentException("El método de pago debe ser 'Efectivo' o 'SINPE'.");
+            }
+
+            if (dto.Notes != null && dto.Notes.Length > 255)
+            {
+                throw new ArgumentException("Las notas no pueden exceder 255 caracteres.");
+            }
+
             // Actualizar campos
             if (dto.Amount.HasValue)
                 entity.Amount = dto.Amount.Value;

@@ -33,6 +33,10 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [Column("isActive")]
         public bool IsActive { get; set; } = true;
 
+        [MaxLength(255)]
+        [Column("cancellationReason")]
+        public string? CancellationReason { get; set; }
+
         // Navigation property
         public Appointment? Appointment { get; set; }
 
