@@ -76,5 +76,61 @@ namespace Brittany_Salon_Backend.Application.Services
                 IsActive = entity.IsActive
             };
         }
+        public async Task<CategoryReadDto?> UpdateAsync(int id, CategoryUpdateDto dto)
+        {
+            var entity = await _db.Categories.FindAsync(id);
+            if (entity is null) return null;
+
+            var nameExists = await _db.Categories
+                .AnyAsync(c => c.CategoryId != id &&
+                               c.CategoryName.ToLower() == dto.CategoryName.Trim().ToLower());
+
+            if (nameExists)
+                throw new InvalidOperationException("Ya existe otra categoría con ese nombre.");
+
+            entity.CategoryName = dto.CategoryName.Trim();
+            entity.CategoryDescription = dto.CategoryDescription?.Trim();
+            entity.IsActive = dto.IsActive;
+
+            await _db.SaveChangesAsync();
+
+            return new CategoryReadDto
+            {
+                CategoryId = entity.CategoryId,
+                CategoryName = entity.CategoryName,
+                CategoryDescription = entity.CategoryDescription,
+                IsActive = entity.IsActive
+            };
+        }
+        public async Task<bool> DeactivateAsync(int id)
+        {
+            var entity = await _db.Categories.FirstOrDefaultAsync(c => c.CategoryId == id);
+            if (entity is null) return false;
+
+            var hasProducts = await _db.Products
+                .AsNoTracking()
+                .AnyAsync(p => p.CategoryId == id);
+
+            if (hasProducts)
+                throw new InvalidOperationException("No se puede desactivar la categoría porque está asociada a uno o más productos.");
+
+            entity.IsActive = false;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReactivateAsync(int id)
+        {
+            var entity = await _db.Categories.FindAsync(id);
+            if (entity is null) return false;
+
+            if (entity.IsActive) return true;
+
+            entity.IsActive = true;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 }
