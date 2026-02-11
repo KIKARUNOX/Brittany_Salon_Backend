@@ -50,6 +50,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
             {
                 return Conflict(ex.Message);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
         }
 
@@ -72,6 +76,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
             catch (InvalidOperationException ex)
             {
                 return Conflict(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
