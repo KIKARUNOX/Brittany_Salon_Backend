@@ -142,6 +142,29 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
+        /// Registra un nuevo pago y reduce el saldo pendiente del cliente
+        /// </summary>
+        /// <param name="dto">Datos del pago a registrar</param>
+        /// <returns>Pago creado</returns>
+        /// <response code="201">Pago creado exitosamente</response>
+        /// <response code="400">Errores de validación</response>
+        [HttpPost("create-and-reduce-balance")]
+        [ProducesResponseType(typeof(PaymentReadDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<PaymentReadDto>> CreateAndReduceBalance([FromBody] PaymentCreateDto dto)
+        {
+            try
+            {
+                var created = await _paymentService.CreateAndReduceBalanceAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = created.PaymentId }, created);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Actualiza un pago existente
         /// </summary>
         /// <param name="id">ID del pago a actualizar</param>

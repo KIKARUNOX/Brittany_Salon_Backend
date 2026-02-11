@@ -15,5 +15,6 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<bool> CompleteAsync(int appointmentId);
         Task<AppointmentAvailabilityResponseDto> ValidateAvailabilityAsync(AppointmentAvailabilityRequestDto dto);
                 Task<decimal> GetPendingBalanceAsync(int appointmentId);
+        Task<decimal> GetPendingBalanceClientAsync(int appointmentId);
             }
         }

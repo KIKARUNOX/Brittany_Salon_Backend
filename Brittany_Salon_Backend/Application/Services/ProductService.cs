@@ -211,10 +211,6 @@ namespace Brittany_Salon_Backend.Application.Services
             var entity = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == id);
             if (entity is null) return false;
 
-            var hasHistory = await HasAssociatedAppointmentsAsync(id);
-            if (hasHistory)
-                throw new InvalidOperationException("No se puede desactivar el producto porque está asociado a una o más citas.");
-
             entity.IsActive = false;
             await _db.SaveChangesAsync();
             return true;
