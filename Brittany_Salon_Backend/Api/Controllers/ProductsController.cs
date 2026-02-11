@@ -20,10 +20,21 @@ namespace Brittany_Salon_Backend.Api.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ProductReadDto>> Create([FromForm] ProductCreateDto dto)
         {
-            var created = await _productService.CreateAsync(dto);
+            try
+            {
+                var created = await _productService.CreateAsync(dto);
 
-            // Devuelve 201 Created con la ubicación del recurso creado
-            return CreatedAtAction(nameof(GetById), new { id = created.ProductId }, created);
+                // Devuelve 201 Created con la ubicación del recurso creado
+                return CreatedAtAction(nameof(GetById), new { id = created.ProductId }, created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         
@@ -64,12 +75,23 @@ namespace Brittany_Salon_Backend.Api.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ProductReadDto>> Update(int id, [FromForm] ProductUpdateDto dto)
         {
-            var updated = await _productService.UpdateAsync(id, dto);
+            try
+            {
+                var updated = await _productService.UpdateAsync(id, dto);
 
-            if (updated is null)
-                return NotFound("Producto no encontrado.");
+                if (updated is null)
+                    return NotFound("Producto no encontrado.");
 
-            return Ok(updated);
+                return Ok(updated);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // PATCH: api/products/{id}/deactivate

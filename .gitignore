@@ -505,7 +505,6 @@ $RECYCLE.BIN/
 # -----------------------------------------------------------------------------
 # Archivos de configuración local y secretos
 # -----------------------------------------------------------------------------
-appsettings.json
 appsettings.Development.json
 appsettings.Local.json
 appsettings.*.local.json
