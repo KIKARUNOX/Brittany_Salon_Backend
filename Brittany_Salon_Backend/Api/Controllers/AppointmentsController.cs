@@ -256,5 +256,20 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return BuildBadRequest(ex);
             }
         }
+
+        // GET: api/appointments/10/pending-balance
+        [HttpGet("{id:int}/pending-balance")]
+        public async Task<IActionResult> GetPendingBalance(int id)
+        {
+            try
+            {
+                var pendingBalance = await _appointmentService.GetPendingBalanceAsync(id);
+                return Ok(new { appointmentId = id, pendingBalance });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BuildBadRequest(ex);
+            }
+        }
     }
 }

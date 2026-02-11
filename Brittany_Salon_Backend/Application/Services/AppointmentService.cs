@@ -626,5 +626,24 @@ namespace Brittany_Salon_Backend.Application.Services
                 .AnyAsync(x => serviceIds.Contains(x.aps.ServiceId));
         }
 
+        public async Task<decimal> GetPendingBalanceAsync(int appointmentId)
+        {
+            if (appointmentId <= 0)
+                throw new InvalidOperationException("AppointmentId inválido.");
+
+            var appointment = await _db.Appointments
+                .AsNoTracking()
+                .Include(a => a.Payments)
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            if (appointment is null)
+                throw new InvalidOperationException("Cita no encontrada.");
+
+            var totalPaid = appointment.Payments
+                .Where(p => p.IsActive)
+                .Sum(p => p.Amount);
+
+            return (appointment.TotalCost ?? 0) - totalPaid;
+        }
     }
 }
