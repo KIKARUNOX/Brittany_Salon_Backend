@@ -234,8 +234,8 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);
 
-                entity.HasOne(x => x.Appointment)
-                      .WithMany()
+            entity.HasOne(x => x.Appointment)
+                      .WithMany(a => a.Payments)
                       .HasForeignKey(x => x.AppointmentId)
                       .OnDelete(DeleteBehavior.Restrict);
             });

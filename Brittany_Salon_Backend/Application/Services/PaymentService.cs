@@ -154,6 +154,41 @@ namespace Brittany_Salon_Backend.Application.Services
             return MapToReadDto(entity);
         }
 
+        public async Task<PaymentReadDto> CreateAndReduceBalanceAsync(PaymentCreateDto dto)
+        {
+            _logger.LogInfo("Iniciando creación de pago y reducción de saldo para cita ID: {AppointmentId}", dto.AppointmentId);
+
+            // Validar que la cita existe
+            var appointment = await _db.Appointments
+                .Include(a => a.Client)
+                .FirstOrDefaultAsync(a => a.AppointmentId == dto.AppointmentId);
+            if (appointment == null)
+            {
+                throw new ArgumentException("La cita especificada no existe.");
+            }
+
+            // Crear entidad
+            var entity = new Payment
+            {
+                AppointmentId = dto.AppointmentId,
+                Amount = dto.Amount,
+                PaymentDate = DateTime.Now,
+                PaymentMethod = dto.PaymentMethod,
+                PaymentStatus = dto.PaymentStatus,
+                IsActive = dto.IsActive ?? true
+            };
+
+            _db.Payments.Add(entity);
+
+            // Reducir el saldo pendiente del cliente
+            appointment.Client.PendingBalance -= dto.Amount;
+
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Pago creado y saldo reducido exitosamente con ID: {Id}", entity.PaymentId);
+            return MapToReadDto(entity);
+        }
+
         public async Task<bool> UpdateAsync(int id, PaymentUpdateDto dto)
         {
             _logger.LogInfo("Iniciando actualización de pago ID: {Id}", id);

@@ -2,6 +2,7 @@
 using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Application.Validators;
+using Brittany_Salon_Backend.Domain.Constants;
 using Brittany_Salon_Backend.Domain.Entities;
 using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
@@ -271,8 +272,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (appointment is null) return false;
 
-            var currentStatus = (appointment.AppointmentStatus ?? string.Empty).Trim().ToLower();
-            if (currentStatus != "pendiente")
+            if (!AppointmentStatuses.CanBeEdited(appointment.AppointmentStatus))
                 throw new InvalidOperationException("Solo se puede editar una cita con estado Pendiente.");
 
             var serviceIds = dto.Services
@@ -493,15 +493,16 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (appointment is null) return false;
 
-            var currentStatus = (appointment.AppointmentStatus ?? string.Empty).Trim().ToLower();
-
-            if (currentStatus == "cancelada")
+            if (string.Equals(appointment.AppointmentStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (currentStatus == "completada" || currentStatus == "finalizada")
-                throw new InvalidOperationException("No se puede cancelar una cita completada.");
+            if (AppointmentStatuses.IsFinalState(appointment.AppointmentStatus))
+                throw new InvalidOperationException("No se puede cancelar una cita finalizada.");
 
-            appointment.AppointmentStatus = "Cancelada";
+            if (!AppointmentStatuses.CanBeCancelled(appointment.AppointmentStatus))
+                throw new InvalidOperationException("No se puede cancelar una cita en este estado.");
+
+            appointment.AppointmentStatus = AppointmentStatuses.Cancelled;
             appointment.IsActive = false;
 
             await _db.SaveChangesAsync();
@@ -518,20 +519,22 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (appointment is null) return false;
 
-            var currentStatus = (appointment.AppointmentStatus ?? string.Empty)
-                .Trim()
-                .ToLower();
-
-            if (currentStatus == "completada")
+            if (string.Equals(appointment.AppointmentStatus, AppointmentStatuses.Finalized, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (currentStatus == "cancelada")
+            if (string.Equals(appointment.AppointmentStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("No se puede completar una cita cancelada.");
 
-            if (currentStatus != "pendiente")
-                throw new InvalidOperationException("Solo se puede completar una cita en estado Pendiente.");
+            // Calcular saldo pendiente para determinar el estado final
+            var totalPaid = await _db.Payments
+                .Where(p => p.AppointmentId == appointmentId && p.IsActive)
+                .SumAsync(p => p.Amount);
 
-            appointment.AppointmentStatus = "Completada";
+            var pendingBalance = (appointment.TotalCost ?? 0) - totalPaid;
+
+            appointment.AppointmentStatus = pendingBalance > 0
+                ? AppointmentStatuses.CompletedPendingPayment
+                : AppointmentStatuses.Finalized;
             appointment.IsActive = false;
 
             await _db.SaveChangesAsync();
@@ -612,7 +615,8 @@ namespace Brittany_Salon_Backend.Application.Services
                 .Where(a => a.StartTime < end && a.EndTime > start);
 
             query = query.Where(a =>
-                (a.AppointmentStatus == null || a.AppointmentStatus.Trim().ToLower() != "cancelada")
+                a.AppointmentStatus == null || 
+                !a.AppointmentStatus.Equals(AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase)
             );
 
             if (excludeAppointmentId.HasValue)
@@ -626,5 +630,40 @@ namespace Brittany_Salon_Backend.Application.Services
                 .AnyAsync(x => serviceIds.Contains(x.aps.ServiceId));
         }
 
+        public async Task<decimal> GetPendingBalanceAsync(int appointmentId)
+        {
+            if (appointmentId <= 0)
+                throw new InvalidOperationException("AppointmentId inválido.");
+
+            var appointment = await _db.Appointments
+                .AsNoTracking()
+                .Include(a => a.Payments)
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            if (appointment is null)
+                throw new InvalidOperationException("Cita no encontrada.");
+
+            var totalPaid = appointment.Payments
+                .Where(p => p.IsActive)
+                .Sum(p => p.Amount);
+
+            return (appointment.TotalCost ?? 0) - totalPaid;
+        }
+
+        public async Task<decimal> GetPendingBalanceClientAsync(int appointmentId)
+        {
+            if (appointmentId <= 0)
+                throw new InvalidOperationException("AppointmentId inválido.");
+
+            var appointment = await _db.Appointments
+                .AsNoTracking()
+                .Include(a => a.Client)
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            if (appointment is null)
+                throw new InvalidOperationException("Cita no encontrada.");
+
+            return appointment.Client.PendingBalance;
+        }
     }
 }
