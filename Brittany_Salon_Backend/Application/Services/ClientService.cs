@@ -67,7 +67,7 @@ namespace Brittany_Salon_Backend.Application.Services
         }
 
         /// <summary>
-        /// Busca clientes por nombre (b�squeda parcial)
+        /// Busca clientes por nombre (busqueda parcial)
         /// </summary>
         public async Task<List<ClientReadDto>> SearchByNameAsync(string name, bool onlyActive = false)
         {
@@ -95,22 +95,18 @@ namespace Brittany_Salon_Backend.Application.Services
         /// </summary>
         public async Task<ClientReadDto> CreateAsync(ClientCreateDto dto)
         {
-            _logger.LogInfo("Iniciando creaci�n de cliente: {Email}", dto.Email);
+            _logger.LogInfo("Iniciando creacion de cliente: {Email}", dto.Email);
 
-            // Paso 1: Validaciones de formato y reglas de negocio
             var validationErrors = ClientValidator.ValidateCreate(dto, _logger);
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            // Paso 2: Normalizar datos
             var normalizedEmail = dto.Email.Trim().ToLower();
             var normalizedName = NormalizeName(dto.Name);
             var normalizedPhone = dto.Phone?.Trim() ?? string.Empty;
 
-            // Paso 3: Validaciones contra base de datos
             await ValidateUniqueConstraintsAsync(normalizedEmail);
 
-            // Paso 4: Crear entidad
             var entity = new Clients
             {
                 Name = normalizedName,
@@ -124,13 +120,11 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Clients.Add(entity);
             await _db.SaveChangesAsync();
 
-            // Paso 5: Procesar imagen si se proporcion�
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessClientImageAsync(entity, dto.Image);
             }
 
-            // Paso 6: Retornar DTO de respuesta
             return MapToReadDto(entity);
         }
 
@@ -139,9 +133,8 @@ namespace Brittany_Salon_Backend.Application.Services
         /// </summary>
         public async Task<bool> UpdateAsync(int id, ClientUpdateDto dto)
         {
-            _logger.LogInfo("Iniciando actualizaci�n de cliente ID: {Id}", id);
+            _logger.LogInfo("Iniciando actualizacion de cliente ID: {Id}", id);
 
-            // Paso 1: Buscar cliente
             var entity = await _db.Clients.FindAsync(id);
             if (entity == null)
             {
@@ -149,16 +142,13 @@ namespace Brittany_Salon_Backend.Application.Services
                 return false;
             }
 
-            // Paso 2: Validar datos del DTO
             var validationErrors = ClientValidator.ValidateUpdate(dto, _logger);
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            // Paso 3: Validar unicidad de email (si se est� actualizando)
             var newEmail = !string.IsNullOrWhiteSpace(dto.Email) ? dto.Email.Trim().ToLower() : null;
             await ValidateUniqueConstraintsForUpdateAsync(id, newEmail);
 
-            // Paso 4: Actualizar campos (solo los que se proporcionan)
             if (!string.IsNullOrWhiteSpace(dto.Name))
                 entity.Name = NormalizeName(dto.Name);
 
@@ -170,11 +160,9 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
-
                 entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
             }
 
-            // Paso 5: Procesar imagen si se proporcion�
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessClientImageAsync(entity, dto.Image);

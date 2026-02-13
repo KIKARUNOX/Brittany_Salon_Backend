@@ -24,8 +24,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<AppDbContext>(options => // Configura EF Core + SQL Server
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Registrar DevLogger - Solo loggea en Development
 if (builder.Environment.IsDevelopment())
