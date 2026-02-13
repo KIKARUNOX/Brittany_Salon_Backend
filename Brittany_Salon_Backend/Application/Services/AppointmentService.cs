@@ -610,13 +610,15 @@ namespace Brittany_Salon_Backend.Application.Services
             List<int> serviceIds,
             int? excludeAppointmentId = null)
         {
+            var cancelledStatus = AppointmentStatuses.Cancelled.ToLower();
+
             var query = _db.Appointments
                 .AsNoTracking()
                 .Where(a => a.StartTime < end && a.EndTime > start);
 
             query = query.Where(a =>
                 a.AppointmentStatus == null || 
-                !a.AppointmentStatus.Equals(AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase)
+                a.AppointmentStatus.ToLower() != cancelledStatus
             );
 
             if (excludeAppointmentId.HasValue)
