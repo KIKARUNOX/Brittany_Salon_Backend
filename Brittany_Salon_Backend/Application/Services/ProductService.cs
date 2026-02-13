@@ -1,13 +1,13 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Product;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Validators;
 using Brittany_Salon_Backend.Domain.Entities;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Brittany_Salon_Backend.Application.Exceptions;
-using Brittany_Salon_Backend.Infrastructure.Logging;
-// using Brittany_Salon_Backend.Application.Validators;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
@@ -26,16 +26,13 @@ namespace Brittany_Salon_Backend.Application.Services
 
         public async Task<ProductReadDto> CreateAsync(ProductCreateDto dto)
         {
-            // (Opcional) Validación tipo ServiceValidator
-            // var validationErrors = ProductValidator.ValidateCreate(dto, _logger);
-            // if (validationErrors.Count > 0) throw new ValidationException(validationErrors);
+            var validationErrors = ProductValidator.ValidateCreate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
-            var categoryExists = await _db.Categories
-                .AsNoTracking()
-                .AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive);
-
-            if (!categoryExists)
-                throw new InvalidOperationException("La categoría no existe o está inactiva.");
+            var categoryErrors = await ProductValidator.ValidateCategoryExistsAsync(dto.CategoryId, _db, _logger);
+            if (categoryErrors.Count > 0)
+                throw new ValidationException(categoryErrors);
 
             var entity = new Product
             {
@@ -51,17 +48,16 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Products.Add(entity);
             await _db.SaveChangesAsync();
 
-       
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessProductImageAsync(entity, dto.Image);
             }
 
-            
             await _db.Entry(entity).Reference(p => p.Category).LoadAsync();
 
             return MapToReadDto(entity);
         }
+
 
         private static ProductReadDto MapToReadDto(Product entity)
         {
@@ -180,12 +176,13 @@ namespace Brittany_Salon_Backend.Application.Services
             var entity = await _db.Products.FindAsync(id);
             if (entity is null) return null;
 
-            var categoryExists = await _db.Categories
-                .AsNoTracking()
-                .AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive);
+            var validationErrors = ProductValidator.ValidateUpdate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
-            if (!categoryExists)
-                throw new InvalidOperationException("La categoría no existe o está inactiva.");
+            var categoryErrors = await ProductValidator.ValidateCategoryExistsAsync(dto.CategoryId, _db, _logger);
+            if (categoryErrors.Count > 0)
+                throw new ValidationException(categoryErrors);
 
             entity.ProductName = dto.ProductName.Trim();
             entity.ProductDescription = dto.ProductDescription?.Trim();
@@ -205,6 +202,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             return MapToReadDto(entity);
         }
+
 
         public async Task<bool> DeactivateAsync(int id)
         {

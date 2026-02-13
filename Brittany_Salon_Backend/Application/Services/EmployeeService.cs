@@ -119,20 +119,16 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             _logger.LogInfo("Iniciando creacion de empleado: {Email}", dto.Email);
 
-            // Paso 1: Validaciones de formato y reglas de negocio
             var validationErrors = EmployeeValidator.ValidateCreate(dto, _logger);
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            // Paso 2: Normalizar datos
             var normalizedEmail = dto.Email.Trim().ToLower();
             var normalizedName = NormalizeName(dto.Name);
             var normalizedPhone = dto.Phone.Trim();
 
-            // Paso 3: Validaciones contra base de datos
             await ValidateUniqueConstraintsAsync(normalizedEmail, normalizedPhone);
 
-            // Paso 4: Crear entidad
             var entity = new Employee
             {
                 Name = normalizedName,
@@ -147,14 +143,11 @@ namespace Brittany_Salon_Backend.Application.Services
             _db.Employees.Add(entity);
             await _db.SaveChangesAsync();
 
-
-            // Paso 5: Procesar imagen si se proporciono
             if (dto.Image != null && dto.Image.Length > 0)
             {
                 await ProcessEmployeeImageAsync(entity, dto.Image);
             }
 
-            // Paso 6: Retornar DTO de respuesta
             return MapToReadDto(entity);
         }
 
@@ -165,7 +158,6 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             _logger.LogInfo("Iniciando actualizacion de empleado ID: {Id}", id);
 
-            // Paso 1: Buscar empleado
             var entity = await _db.Employees.FindAsync(id);
             if (entity == null)
             {
@@ -173,17 +165,14 @@ namespace Brittany_Salon_Backend.Application.Services
                 return false;
             }
 
-            // Paso 2: Validar datos del DTO
             var validationErrors = EmployeeValidator.ValidateUpdate(dto, _logger);
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            // Paso 3: Validar unicidad de email/telefono (si se estan actualizando)
             var newEmail = !string.IsNullOrWhiteSpace(dto.Email) ? dto.Email.Trim().ToLower() : null;
             var newPhone = !string.IsNullOrWhiteSpace(dto.Phone) ? dto.Phone.Trim() : null;
             await ValidateUniqueConstraintsForUpdateAsync(id, newEmail, newPhone);
 
-            // Paso 4: Actualizar campos (solo los que se proporcionan)
             if (!string.IsNullOrWhiteSpace(dto.Name))
                 entity.Name = NormalizeName(dto.Name);
 
@@ -202,19 +191,15 @@ namespace Brittany_Salon_Backend.Application.Services
             if (dto.IsActive.HasValue)
                 entity.IsActive = dto.IsActive.Value;
 
-            // Paso 5: Manejar imagen
             if (dto.RemoveImage)
             {
-                // Eliminar imagen sin reemplazar
                 RemoveEmployeeImage(entity);
             }
             else if (dto.Image != null && dto.Image.Length > 0)
             {
-                // Actualizar imagen (elimina la anterior y guarda la nueva)
                 await UpdateEmployeeImageAsync(entity, dto.Image);
             }
 
-            // Paso 6: Guardar cambios
             await _db.SaveChangesAsync();
 
             _logger.LogInfo("Empleado ID {Id} actualizado exitosamente", id);
