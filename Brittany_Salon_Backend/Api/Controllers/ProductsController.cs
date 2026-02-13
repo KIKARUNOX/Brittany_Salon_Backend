@@ -1,6 +1,7 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Product;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Brittany_Salon_Backend.Application.Exceptions;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
@@ -14,7 +15,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
             _productService = productService;
         }
 
-     
+
         // POST: api/products
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -23,21 +24,28 @@ namespace Brittany_Salon_Backend.Api.Controllers
             try
             {
                 var created = await _productService.CreateAsync(dto);
-
-                // Devuelve 201 Created con la ubicación del recurso creado
                 return CreatedAtAction(nameof(GetById), new { id = created.ProductId }, created);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Errores de validación",
+                    errors = ex.Errors
+                });
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
             }
         }
 
-        
+
+
+
         // GET: api/products/{id}
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ProductReadDto>> GetById(int id)
@@ -69,7 +77,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok(result);
         }
 
-        
+
         // PUT: api/products/{id}
         [HttpPut("{id:int}")]
         [Consumes("multipart/form-data")]
@@ -80,19 +88,27 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 var updated = await _productService.UpdateAsync(id, dto);
 
                 if (updated is null)
-                    return NotFound("Producto no encontrado.");
+                    return NotFound(new { message = "Producto no encontrado." });
 
                 return Ok(updated);
             }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new
+                {
+                    message = "Errores de validación",
+                    errors = ex.Errors
+                });
+            }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
             }
         }
+
 
         // PATCH: api/products/{id}/deactivate
         [HttpPatch("{id:int}/deactivate")]
