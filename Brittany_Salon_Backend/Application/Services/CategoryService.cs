@@ -1,7 +1,10 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Category;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Validators;
 using Brittany_Salon_Backend.Domain.Entities;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brittany_Salon_Backend.Application.Services
@@ -9,14 +12,20 @@ namespace Brittany_Salon_Backend.Application.Services
     public class CategoryService : ICategoryService
     {
         private readonly AppDbContext _db;
+        private readonly IDevLogger _logger;
 
-        public CategoryService(AppDbContext db)
+        public CategoryService(AppDbContext db, IDevLogger logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         public async Task<CategoryReadDto> CreateAsync(CategoryCreateDto dto)
         {
+            var validationErrors = CategoryValidator.ValidateCreate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
+
             var exists = await _db.Categories
                 .AnyAsync(c => c.CategoryName.ToLower() == dto.CategoryName.Trim().ToLower());
 
@@ -36,7 +45,7 @@ namespace Brittany_Salon_Backend.Application.Services
             return MapToReadDto(entity);
         }
 
-        public async Task<List<CategoryReadDto>> GetAllAsync(bool onlyActive = true)
+       public async Task<List<CategoryReadDto>> GetAllAsync(bool onlyActive = true)
         {
             var query = _db.Categories.AsNoTracking();
 
@@ -66,20 +75,14 @@ namespace Brittany_Salon_Backend.Application.Services
             return MapToReadDto(entity);
         }
 
-        private static CategoryReadDto MapToReadDto(Category entity)
-        {
-            return new CategoryReadDto
-            {
-                CategoryId = entity.CategoryId,
-                CategoryName = entity.CategoryName,
-                CategoryDescription = entity.CategoryDescription,
-                IsActive = entity.IsActive
-            };
-        }
         public async Task<CategoryReadDto?> UpdateAsync(int id, CategoryUpdateDto dto)
         {
             var entity = await _db.Categories.FindAsync(id);
             if (entity is null) return null;
+
+            var validationErrors = CategoryValidator.ValidateUpdate(dto, _logger);
+            if (validationErrors.Count > 0)
+                throw new ValidationException(validationErrors);
 
             var nameExists = await _db.Categories
                 .AnyAsync(c => c.CategoryId != id &&
@@ -94,14 +97,9 @@ namespace Brittany_Salon_Backend.Application.Services
 
             await _db.SaveChangesAsync();
 
-            return new CategoryReadDto
-            {
-                CategoryId = entity.CategoryId,
-                CategoryName = entity.CategoryName,
-                CategoryDescription = entity.CategoryDescription,
-                IsActive = entity.IsActive
-            };
+            return MapToReadDto(entity);
         }
+
         public async Task<bool> DeactivateAsync(int id)
         {
             var entity = await _db.Categories.FirstOrDefaultAsync(c => c.CategoryId == id);
@@ -131,6 +129,15 @@ namespace Brittany_Salon_Backend.Application.Services
             return true;
         }
 
-
+        private static CategoryReadDto MapToReadDto(Category entity)
+        {
+            return new CategoryReadDto
+            {
+                CategoryId = entity.CategoryId,
+                CategoryName = entity.CategoryName,
+                CategoryDescription = entity.CategoryDescription,
+                IsActive = entity.IsActive
+            };
+        }
     }
 }
