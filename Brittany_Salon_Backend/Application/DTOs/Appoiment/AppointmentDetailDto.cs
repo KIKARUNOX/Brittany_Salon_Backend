@@ -11,6 +11,8 @@
         public bool IsActive { get; set; }
 
         public int ClientId { get; set; }
+
+        public int? HairLengthOption { get; set; }
         public ClientMiniDto Client { get; set; } = new();
 
         public List<AppointmentServiceDetailDto> Services { get; set; } = new();
@@ -37,5 +39,7 @@
         public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public decimal Price { get; set; }
+        public int Quantity { get; set; }
     }
+
 }

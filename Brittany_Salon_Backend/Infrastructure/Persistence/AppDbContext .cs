@@ -138,13 +138,16 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);
 
+                entity.Property(x => x.HairLengthOption)
+                        .HasColumnName("hairLengthOption");
+
                 entity.Property(x => x.ClientId)
                       .IsRequired();
 
                 entity.HasOne(x => x.Client)
                       .WithMany()
                       .HasForeignKey(x => x.ClientId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                      .OnDelete(DeleteBehavior.Restrict);              
             });
 
             modelBuilder.Entity<AppointmentService>(entity =>
@@ -203,6 +206,13 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.ToTable("AppointmentProduct");
                 entity.HasKey(x => x.AppointmentProductId);
 
+                entity.Property(x => x.Quantity)
+                      .IsRequired()
+                      .HasDefaultValue(1);
+
+                entity.HasIndex(x => new { x.AppointmentId, x.ProductId })
+                      .IsUnique();
+
                 entity.HasOne(x => x.Appointment)
                       .WithMany(a => a.AppointmentProducts)
                       .HasForeignKey(x => x.AppointmentId);
@@ -211,6 +221,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .WithMany(p => p.AppointmentProducts)
                       .HasForeignKey(x => x.ProductId);
             });
+
 
             modelBuilder.Entity<Payment>(entity =>
             {

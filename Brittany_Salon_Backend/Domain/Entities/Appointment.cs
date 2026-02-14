@@ -32,6 +32,9 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [Column("isActive")]
         public bool IsActive { get; set; } = true;
 
+        [Column("hairLengthOption")]
+        public int? HairLengthOption { get; set; }
+
         [Required]
         [Column("clientId")]
         public int ClientId { get; set; }

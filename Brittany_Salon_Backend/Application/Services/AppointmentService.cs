@@ -30,21 +30,6 @@ namespace Brittany_Salon_Backend.Application.Services
             if (validationErrors.Count > 0)
                 throw new ValidationException(validationErrors);
 
-            var appointment = new Appointment
-            {
-                AppointmentDate = dto.AppointmentDate,
-                StartTime = dto.StartTime,
-                EndTime = dto.StartTime,
-                AppointmentStatus = dto.AppointmentStatus,
-                ClientId = dto.ClientId,
-                IsActive = true
-            };
-
-            _db.Appointments.Add(appointment);
-            await _db.SaveChangesAsync();
-
-            decimal totalCost = 0m;
-
             var serviceIds = dto.Services
                 .Select(s => s.ServiceId)
                 .Distinct()
@@ -56,6 +41,30 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (services.Count != serviceIds.Count)
                 throw new InvalidOperationException("Uno o más servicios no existen.");
+
+            var hairServiceCount = services.Count(s =>
+                !string.IsNullOrWhiteSpace(s.ServiceType) &&
+                s.ServiceType.Trim().ToLower() == "cabello"
+            );
+
+            if (hairServiceCount > 0 && (!dto.HairLengthOption.HasValue || dto.HairLengthOption.Value <= 0))
+                throw new InvalidOperationException("Debe seleccionar el largo del cabello para servicios de tipo 'cabello'.");
+
+            var appointment = new Appointment
+            {
+                AppointmentDate = dto.AppointmentDate,
+                StartTime = dto.StartTime,
+                EndTime = dto.StartTime,
+                AppointmentStatus = dto.AppointmentStatus,
+                ClientId = dto.ClientId,
+                IsActive = true,
+                HairLengthOption = hairServiceCount > 0 ? dto.HairLengthOption : null
+            };
+
+            _db.Appointments.Add(appointment);
+            await _db.SaveChangesAsync();
+
+            decimal totalCost = 0m;
 
             foreach (var service in services)
             {
@@ -71,15 +80,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             var baseDurationMinutes = services.Sum(s => s.DurationMinutes);
 
-            var hairServiceCount = services.Count(s =>
-                !string.IsNullOrWhiteSpace(s.ServiceType) &&
-                s.ServiceType.Trim().ToLower() == "cabello"
-            );
-
-            var hairOption = dto.HairLengthOption.GetValueOrDefault(0);
-
-            if (hairServiceCount > 0 && hairOption == 0)
-                throw new InvalidOperationException("Debe seleccionar el largo del cabello para servicios de tipo 'cabello'.");
+            var hairOption = hairServiceCount > 0 ? dto.HairLengthOption!.Value : 0;
 
             decimal hairCostPerService = hairOption switch
             {
@@ -101,7 +102,6 @@ namespace Brittany_Salon_Backend.Application.Services
             totalCost += hairCostPerService * hairServiceCount;
 
             var totalDurationMinutes = baseDurationMinutes + (hairExtraMinutesPerService * hairServiceCount);
-
             appointment.EndTime = appointment.StartTime.AddMinutes(totalDurationMinutes);
 
             var availability = await ValidateAvailabilityAsync(new AppointmentAvailabilityRequestDto
@@ -116,38 +116,37 @@ namespace Brittany_Salon_Backend.Application.Services
 
             if (dto.Products != null && dto.Products.Count > 0)
             {
-                // Obtain unique IDs to validate existence
-                var uniqueProductIds = dto.Products
-                    .Select(p => p.ProductId)
-                    .Distinct()
+                var normalizedProducts = dto.Products
+                    .Where(p => p.ProductId > 0)
+                    .GroupBy(p => p.ProductId)
+                    .Select(g => new
+                    {
+                        ProductId = g.Key,
+                        Quantity = g.Sum(x => x.Quantity <= 0 ? 1 : x.Quantity)
+                    })
                     .ToList();
 
+                var productIds = normalizedProducts.Select(x => x.ProductId).ToList();
+
                 var products = await _db.Products
-                    .Where(p => uniqueProductIds.Contains(p.ProductId))
+                    .Where(p => productIds.Contains(p.ProductId))
                     .ToDictionaryAsync(p => p.ProductId, p => p);
 
-                if (products.Count != uniqueProductIds.Count)
+                if (products.Count != productIds.Count)
                     throw new InvalidOperationException("Uno o más productos no existen.");
 
-                // Add products respecting quantities
-                foreach (var productDto in dto.Products)
+                foreach (var item in normalizedProducts)
                 {
-                    if (!products.ContainsKey(productDto.ProductId))
-                        continue;
+                    var product = products[item.ProductId];
 
-                    var product = products[productDto.ProductId];
-                    var quantity = productDto.Quantity > 0 ? productDto.Quantity : 1;
-
-                    for (int i = 0; i < quantity; i++)
+                    _db.AppointmentProducts.Add(new AppointmentProduct
                     {
-                        _db.AppointmentProducts.Add(new AppointmentProduct
-                        {
-                            AppointmentId = appointment.AppointmentId,
-                            ProductId = product.ProductId
-                        });
+                        AppointmentId = appointment.AppointmentId,
+                        ProductId = product.ProductId,
+                        Quantity = item.Quantity
+                    });
 
-                        totalCost += product.Price;
-                    }
+                    totalCost += product.Price * item.Quantity;
                 }
             }
 
@@ -158,6 +157,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             return appointment.AppointmentId;
         }
+
 
         public async Task<List<AppointmentReadDto>> GetAllAsync()
         {
@@ -199,7 +199,8 @@ namespace Brittany_Salon_Backend.Application.Services
                     TotalCost = a.TotalCost,
                     IsActive = a.IsActive,
                     ClientId = a.ClientId,
-                    ClientName = a.Client.Name
+                    ClientName = a.Client.Name,
+                    HairLengthOption = a.HairLengthOption
                 })
                 .ToListAsync();
         }
@@ -226,7 +227,8 @@ namespace Brittany_Salon_Backend.Application.Services
                     TotalCost = a.TotalCost,
                     IsActive = a.IsActive,
                     ClientId = a.ClientId,
-                    ClientName = a.Client.Name
+                    ClientName = a.Client.Name,
+                    HairLengthOption = a.HairLengthOption
                 })
                 .ToListAsync();
         }
@@ -251,7 +253,8 @@ namespace Brittany_Salon_Backend.Application.Services
                     TotalCost = a.TotalCost,
                     IsActive = a.IsActive,
                     ClientId = a.ClientId,
-                    ClientName = a.Client.Name
+                    ClientName = a.Client.Name,
+                    HairLengthOption = a.HairLengthOption
                 })
                 .ToListAsync();
         }
@@ -290,18 +293,18 @@ namespace Brittany_Salon_Backend.Application.Services
             if (services.Count != serviceIds.Count)
                 throw new InvalidOperationException("Uno o más servicios no existen.");
 
-            decimal totalCost = 0m;
-            var baseDurationMinutes = services.Sum(s => s.DurationMinutes);
-
-            foreach (var s in services)
-                totalCost += s.Price;
-
             var hairServiceCount = services.Count(s =>
                 !string.IsNullOrWhiteSpace(s.ServiceType) &&
                 s.ServiceType.Trim().ToLower() == "cabello"
             );
 
-            var hairOption = dto.HairLengthOption.GetValueOrDefault(0);
+            if (hairServiceCount > 0 && (!dto.HairLengthOption.HasValue || dto.HairLengthOption.Value <= 0))
+                throw new InvalidOperationException("Debe seleccionar el largo del cabello para servicios de tipo 'cabello'.");
+
+            decimal totalCost = services.Sum(s => s.Price);
+            var baseDurationMinutes = services.Sum(s => s.DurationMinutes);
+
+            var hairOption = hairServiceCount > 0 ? dto.HairLengthOption!.Value : 0;
 
             decimal hairCostPerService = hairOption switch
             {
@@ -321,32 +324,36 @@ namespace Brittany_Salon_Backend.Application.Services
             var hairExtraMinutesPerService = hairOption == 0 ? 0 : hairOption * 10;
 
             totalCost += hairCostPerService * hairServiceCount;
+
             var totalDurationMinutes = baseDurationMinutes + (hairExtraMinutesPerService * hairServiceCount);
+
+            var normalizedProducts = new List<(int ProductId, int Quantity)>();
+            Dictionary<int, Product> productDict = new();
 
             if (dto.Products != null && dto.Products.Count > 0)
             {
-                // Obtain unique IDs to validate existence
-                var uniqueProductIds = dto.Products
-                    .Select(p => p.ProductId)
-                    .Distinct()
+                normalizedProducts = dto.Products
+                    .Where(p => p.ProductId > 0)
+                    .GroupBy(p => p.ProductId)
+                    .Select(g => (
+                        ProductId: g.Key,
+                        Quantity: g.Sum(x => x.Quantity <= 0 ? 1 : x.Quantity)
+                    ))
                     .ToList();
 
-                var products = await _db.Products
-                    .Where(p => uniqueProductIds.Contains(p.ProductId))
+                var productIds = normalizedProducts.Select(x => x.ProductId).ToList();
+
+                productDict = await _db.Products
+                    .Where(p => productIds.Contains(p.ProductId))
                     .ToDictionaryAsync(p => p.ProductId, p => p);
 
-                if (products.Count != uniqueProductIds.Count)
+                if (productDict.Count != productIds.Count)
                     throw new InvalidOperationException("Uno o más productos no existen.");
 
-                // Calculate cost respecting quantities
-                foreach (var productDto in dto.Products)
+                foreach (var item in normalizedProducts)
                 {
-                    if (!products.ContainsKey(productDto.ProductId))
-                        continue;
-
-                    var product = products[productDto.ProductId];
-                    var quantity = productDto.Quantity > 0 ? productDto.Quantity : 1;
-                    totalCost += product.Price * quantity;
+                    var product = productDict[item.ProductId];
+                    totalCost += product.Price * item.Quantity;
                 }
             }
 
@@ -368,6 +375,7 @@ namespace Brittany_Salon_Backend.Application.Services
             appointment.EndTime = newEnd;
             appointment.AppointmentDate = newStart.Date;
             appointment.TotalCost = totalCost;
+            appointment.HairLengthOption = hairServiceCount > 0 ? dto.HairLengthOption : null;
 
             var existingApServices = await _db.AppointmentServices
                 .Where(x => x.AppointmentId == appointmentId)
@@ -393,34 +401,16 @@ namespace Brittany_Salon_Backend.Application.Services
             if (existingApProducts.Count > 0)
                 _db.AppointmentProducts.RemoveRange(existingApProducts);
 
-            if (dto.Products != null && dto.Products.Count > 0)
+            if (normalizedProducts.Count > 0)
             {
-                // Obtain product dictionary again for adding
-                var uniqueProductIds = dto.Products
-                    .Select(p => p.ProductId)
-                    .Distinct()
-                    .ToList();
-
-                var products = await _db.Products
-                    .Where(p => uniqueProductIds.Contains(p.ProductId))
-                    .ToDictionaryAsync(p => p.ProductId, p => p);
-
-                // Add products respecting quantities
-                foreach (var productDto in dto.Products)
+                foreach (var item in normalizedProducts)
                 {
-                    if (!products.ContainsKey(productDto.ProductId))
-                        continue;
-
-                    var quantity = productDto.Quantity > 0 ? productDto.Quantity : 1;
-
-                    for (int i = 0; i < quantity; i++)
+                    _db.AppointmentProducts.Add(new AppointmentProduct
                     {
-                        _db.AppointmentProducts.Add(new AppointmentProduct
-                        {
-                            AppointmentId = appointmentId,
-                            ProductId = productDto.ProductId
-                        });
-                    }
+                        AppointmentId = appointmentId,
+                        ProductId = item.ProductId,
+                        Quantity = item.Quantity
+                    });
                 }
             }
 
@@ -429,6 +419,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             return true;
         }
+
         public async Task<AppointmentDetailDto?> GetByIdAsync(int id)
         {
             if (id <= 0) return null;
@@ -454,6 +445,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 TotalCost = appointment.TotalCost,
                 IsActive = appointment.IsActive,
                 ClientId = appointment.ClientId,
+                HairLengthOption = appointment.HairLengthOption,
 
                 Client = new ClientMiniDto
                 {
@@ -477,7 +469,8 @@ namespace Brittany_Salon_Backend.Application.Services
                     {
                         ProductId = p.ProductId,
                         ProductName = p.Product.ProductName,
-                        Price = p.Product.Price
+                        Price = p.Product.Price,
+                        Quantity = p.Quantity
                     })
                     .ToList()
             };
