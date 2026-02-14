@@ -11,10 +11,12 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<List<AppointmentReadDto>> GetByStatusAsync(string status);
         Task<List<AppointmentReadDto>> GetByClientIdAsync(int clientId);
         Task<bool> UpdatePendingAsync(int appointmentId, AppointmentUpdateDto dto);
-        Task<AppointmentDetailDto?> GetByIdAsync(int id); Task<bool> CancelAsync(int appointmentId);
+        Task<AppointmentDetailDto?> GetByIdAsync(int id);
+        Task<bool> CancelAsync(int appointmentId);
         Task<bool> CompleteAsync(int appointmentId);
         Task<AppointmentAvailabilityResponseDto> ValidateAvailabilityAsync(AppointmentAvailabilityRequestDto dto);
-                Task<decimal> GetPendingBalanceAsync(int appointmentId);
+        Task<decimal> GetPendingBalanceAsync(int appointmentId);
         Task<decimal> GetPendingBalanceClientAsync(int appointmentId);
-            }
-        }
+        Task<bool> ChangeStatusAsync(int appointmentId, string newStatus);
+    }
+}
