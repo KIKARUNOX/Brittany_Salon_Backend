@@ -290,5 +290,29 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return BuildBadRequest(ex);
             }
         }
+
+        // PATCH: api/appointments/{id}/change-status
+        [HttpPatch("{id:int}/change-status")]
+        public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusRequestDto dto)
+        {
+            try
+            {
+                if (!ChangeStatusRequestDto.ValidStatuses.Contains(dto.NewStatus))
+                    return BadRequest(new { message = $"Estado inválido: {dto.NewStatus}" });
+
+                var ok = await _appointmentService.ChangeStatusAsync(id, dto.NewStatus);
+                if (!ok) return NotFound(new { message = "Cita no encontrada." });
+
+                return Ok(new { message = "Estado actualizado correctamente." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

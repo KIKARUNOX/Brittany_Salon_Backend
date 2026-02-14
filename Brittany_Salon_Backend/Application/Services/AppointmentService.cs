@@ -273,7 +273,7 @@ namespace Brittany_Salon_Backend.Application.Services
             if (appointment is null) return false;
 
             if (!AppointmentStatuses.CanBeEdited(appointment.AppointmentStatus))
-                throw new InvalidOperationException("Solo se puede editar una cita con estado Pendiente.");
+                throw new InvalidOperationException("Solo se puede editar una cita con estado Pendiente o Confirmada.");
 
             var serviceIds = dto.Services
                 .Select(s => s.ServiceId)
@@ -368,6 +368,10 @@ namespace Brittany_Salon_Backend.Application.Services
             appointment.EndTime = newEnd;
             appointment.AppointmentDate = newStart.Date;
             appointment.TotalCost = totalCost;
+
+            // Si estaba Confirmada, cambiar a Pendiente al editar
+            if (string.Equals(appointment.AppointmentStatus, AppointmentStatuses.Confirmed, StringComparison.OrdinalIgnoreCase))
+                appointment.AppointmentStatus = AppointmentStatuses.Pending;
 
             var existingApServices = await _db.AppointmentServices
                 .Where(x => x.AppointmentId == appointmentId)
@@ -663,6 +667,65 @@ namespace Brittany_Salon_Backend.Application.Services
                 throw new InvalidOperationException("Cita no encontrada.");
 
             return appointment.Client.PendingBalance;
+        }
+
+        public async Task<bool> ChangeStatusAsync(int appointmentId, string newStatus)
+        {
+            if (appointmentId <= 0)
+                throw new InvalidOperationException("AppointmentId inválido.");
+
+            if (string.IsNullOrWhiteSpace(newStatus))
+                throw new InvalidOperationException("El estado no puede estar vacío.");
+
+            if (!AppointmentStatuses.IsValid(newStatus))
+                throw new InvalidOperationException($"Estado inválido: {newStatus}");
+
+            var appointment = await _db.Appointments
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            if (appointment is null)
+                return false;
+
+            var currentStatus = appointment.AppointmentStatus ?? string.Empty;
+
+            if (AppointmentStatuses.IsFinalState(currentStatus) && 
+                !string.Equals(currentStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("No se puede cambiar el estado de una cita en estado final.");
+
+            if (string.Equals(currentStatus, newStatus, StringComparison.OrdinalIgnoreCase))
+                return true; 
+
+            if (string.Equals(currentStatus, AppointmentStatuses.Pending, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(newStatus, AppointmentStatuses.Confirmed, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(newStatus, AppointmentStatuses.CompletedPendingPayment, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(newStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("No se puede cambiar a ese estado desde Pendiente.");
+            }
+            else if (string.Equals(currentStatus, AppointmentStatuses.Confirmed, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(newStatus, AppointmentStatuses.CompletedPendingPayment, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(newStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(newStatus, AppointmentStatuses.Finalized, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("No se puede cambiar a ese estado desde Confirmada.");
+            }
+            else if (string.Equals(currentStatus, AppointmentStatuses.CompletedPendingPayment, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(newStatus, AppointmentStatuses.Finalized, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("No se puede cambiar a ese estado desde CompletedPendingPayment.");
+            }
+            else if (string.Equals(currentStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("No se puede cambiar el estado de una cita cancelada.");
+            }
+
+            appointment.AppointmentStatus = newStatus;
+
+            if (AppointmentStatuses.IsFinalState(newStatus))
+                appointment.IsActive = false;
+
+            await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

@@ -4,8 +4,7 @@ namespace Brittany_Salon_Backend.Domain.Constants
     {
         public const string Pending = "Pendiente";
         public const string Confirmed = "Confirmada";
-        public const string InProgress = "EnProgreso";
-        public const string CompletedPendingPayment = "CompletadaPendientePago";
+        public const string CompletedPendingPayment = "Completada con saldo pendiente";
         public const string Finalized = "Finalizada";
         public const string Cancelled = "Cancelada";
 
@@ -13,7 +12,6 @@ namespace Brittany_Salon_Backend.Domain.Constants
         [
             Pending,
             Confirmed,
-            InProgress,
             CompletedPendingPayment,
             Finalized,
             Cancelled
@@ -32,6 +30,7 @@ namespace Brittany_Salon_Backend.Domain.Constants
             string.Equals(status, Confirmed, StringComparison.OrdinalIgnoreCase);
 
         public static bool CanBeEdited(string? status) =>
-            string.Equals(status, Pending, StringComparison.OrdinalIgnoreCase);
+            string.Equals(status, Pending, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(status, Confirmed, StringComparison.OrdinalIgnoreCase);
     }
 }
