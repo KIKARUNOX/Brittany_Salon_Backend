@@ -18,6 +18,10 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [Column("productId")]
         public int ProductId { get; set; }
 
+        [Required]
+        [Column("quantity")]
+        public int Quantity { get; set; } = 1;
+
         [ForeignKey(nameof(AppointmentId))]
         public Appointment Appointment { get; set; } = null!;
 
