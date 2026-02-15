@@ -13,7 +13,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         public ProductsController(IProductService productService)
         {
             _productService = productService;
-        }
+        } 
 
 
         // POST: api/products

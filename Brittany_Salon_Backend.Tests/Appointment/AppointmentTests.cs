@@ -50,7 +50,7 @@ public class AppointmentTests
         var service = new Service
         {
             ServiceName = "Corte de Cabello",
-            ServiceDescription = "Descripción",
+            ServiceDescription = "Descripciï¿½n",
             Price = 15000m,
             DurationMinutes = 60,
             ServiceType = "Cabello",
@@ -61,7 +61,7 @@ public class AppointmentTests
         await db.SaveChangesAsync();
 
         var dto = new AppointmentCreateDto
-        {
+        { 
             AppointmentDate = DateTime.Now.Date,
             StartTime = DateTime.Now.Date.AddHours(10),
             AppointmentStatus = "Pendiente",
@@ -185,7 +185,7 @@ public class AppointmentTests
         var service = new Service
         {
             ServiceName = "Corte de Cabello",
-            ServiceDescription = "Descripción",
+            ServiceDescription = "Descripciï¿½n",
             Price = 15000m,
             DurationMinutes = 60,
             ServiceType = "Cabello",
