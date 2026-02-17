@@ -27,7 +27,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Registrar DevLogger - Solo loggea en Development
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddScoped<IDevLogger, DevLogger>();
@@ -37,15 +36,16 @@ else
     builder.Services.AddScoped<IDevLogger, NullDevLogger>();
 }
 
-builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyección de dependencias
-builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyección de dependencias Employee
-builder.Services.AddScoped<IImageService, ImageService>(); // Inyección de dependencias Image
-builder.Services.AddScoped<IAppointmentService, AppointmentService>(); //Inyección de dependencias Appointment
-builder.Services.AddScoped<IClientService, ClientService>(); // Inyección de dependencias Client
+builder.Services.AddScoped<IServiceService, ServiceService>(); // Inyecciï¿½n de dependencias
+builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyecciï¿½n de dependencias Employee
+builder.Services.AddScoped<IImageService, ImageService>(); // Inyecciï¿½n de dependencias Image
+builder.Services.AddScoped<IAppointmentService, AppointmentService>(); //Inyecciï¿½n de dependencias Appointment
+builder.Services.AddScoped<IClientService, ClientService>(); // Inyecciï¿½n de dependencias Client
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyección de dependencias Payment
-builder.Services.AddScoped<IProductService, ProductService>(); // Inyección de dependencias Product
-builder.Services.AddScoped<ICategoryService, CategoryService>(); // Inyección de dependencias Category
+builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyecciï¿½n de dependencias Payment
+builder.Services.AddScoped<IProductService, ProductService>(); // Inyecciï¿½n de dependencias Product
+builder.Services.AddScoped<ICategoryService, CategoryService>(); // Inyecciï¿½n de dependencias Category
+builder.Services.AddScoped<IReviewService, ReviewService>(); // Inyecciï¿½n de dependencias Review
 
 var app = builder.Build();
 
@@ -60,7 +60,7 @@ app.UseHttpsRedirection(); // Redirige HTTP -> HTTPS
 // Habilita CORS
 app.UseCors("AllowFrontend");
 
-// Habilita acceso a archivos estáticos desde /imageUser
+// Habilita acceso a archivos estï¿½ticos desde /imageUser
 var publicPath = Path.Combine(builder.Environment.ContentRootPath, "public");
 if (!Directory.Exists(publicPath))
 {

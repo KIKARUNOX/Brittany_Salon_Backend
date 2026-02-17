@@ -16,6 +16,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public DbSet<AppointmentProduct> AppointmentProducts { get; set; } = null!;
         public DbSet<Payment> Payments { get; set; } = null!;
         public DbSet<Category> Categories { get; set; } = null!;
+        public DbSet<Review> Reviews { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -269,6 +270,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.HasIndex(x => x.CategoryName)
                       .IsUnique();
             });
+            
         }
     }
 }
