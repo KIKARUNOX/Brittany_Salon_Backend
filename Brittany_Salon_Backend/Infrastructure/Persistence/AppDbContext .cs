@@ -17,6 +17,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public DbSet<Payment> Payments { get; set; } = null!;
         public DbSet<Category> Categories { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
+        public DbSet<Inventory> Inventory { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -270,7 +271,33 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.HasIndex(x => x.CategoryName)
                       .IsUnique();
             });
-            
+
+            modelBuilder.Entity<Inventory>(entity =>
+            {
+                entity.ToTable("Inventory");
+                entity.HasKey(x => x.InventoryId);
+
+                entity.Property(x => x.ProductId)
+                      .IsRequired();
+
+                entity.Property(x => x.Quantity)
+                      .IsRequired();
+
+                entity.Property(x => x.MinimumStock)
+                      .IsRequired();
+
+                entity.Property(x => x.Category)
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.IsActive)
+                      .HasDefaultValue(true);
+
+                entity.HasOne(x => x.Product)
+                      .WithMany()
+                      .HasForeignKey(x => x.ProductId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
         }
     }
 }

@@ -46,6 +46,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyecci�n de
 builder.Services.AddScoped<IProductService, ProductService>(); // Inyecci�n de dependencias Product
 builder.Services.AddScoped<ICategoryService, CategoryService>(); // Inyecci�n de dependencias Category
 builder.Services.AddScoped<IReviewService, ReviewService>(); // Inyecci�n de dependencias Review
+builder.Services.AddScoped<IInventoryService, InventoryService>(); // Inyecci�n de dependencias Inventory
 
 var app = builder.Build();
 
