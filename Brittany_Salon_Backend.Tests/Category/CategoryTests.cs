@@ -28,12 +28,10 @@ public class CategoryTests
         return (svc, log, db);
     }
 
-    // ========== CREATE TESTS ==========
-
+//Crear categoria
     [Fact]
     public async Task CreateAsync_ValidDto_CreatesCategory()
     {
-        // Arrange
         var (svc, _, db) = Build();
 
         var dto = new CategoryCreateDto
@@ -42,10 +40,8 @@ public class CategoryTests
             CategoryDescription = "Productos para limpiar cabello"
         };
 
-        // Act
         var result = await svc.CreateAsync(dto);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("Champú", result.CategoryName);
         Assert.Equal("Productos para limpiar cabello", result.CategoryDescription);
@@ -59,7 +55,6 @@ public class CategoryTests
     [Fact]
     public async Task CreateAsync_WhenCategoryNameIsEmpty_ThrowsValidationException()
     {
-        // Arrange
         var (svc, _, _) = Build();
 
         var dto = new CategoryCreateDto
@@ -68,7 +63,6 @@ public class CategoryTests
             CategoryDescription = "Descripción"
         };
 
-        // Act + Assert
         await Assert.ThrowsAsync<ValidationException>(
             () => svc.CreateAsync(dto)
         );
@@ -77,7 +71,6 @@ public class CategoryTests
     [Fact]
     public async Task CreateAsync_WhenCategoryNameAlreadyExists_ThrowsInvalidOperationException()
     {
-        // Arrange
         var (svc, _, db) = Build();
 
         var existingCategory = new Category
@@ -95,7 +88,6 @@ public class CategoryTests
             CategoryDescription = "Nueva descripción"
         };
 
-        // Act + Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => svc.CreateAsync(dto)
         );
@@ -103,12 +95,11 @@ public class CategoryTests
         Assert.Contains("Ya existe una categoría", ex.Message);
     }
 
-    // ========== DEACTIVATE/DELETE TESTS ==========
+    //Desactivar categoria
 
     [Fact]
     public async Task DeactivateAsync_WhenCategoryExists_DeactivatesCategory()
     {
-        // Arrange
         var (svc, _, db) = Build();
 
         var category = new Category
@@ -120,10 +111,8 @@ public class CategoryTests
         db.Categories.Add(category);
         await db.SaveChangesAsync();
 
-        // Act
         var result = await svc.DeactivateAsync(category.CategoryId);
 
-        // Assert
         Assert.True(result);
 
         var deactivatedCategory = await db.Categories.FirstOrDefaultAsync(c => c.CategoryId == category.CategoryId);
@@ -134,20 +123,16 @@ public class CategoryTests
     [Fact]
     public async Task DeactivateAsync_WhenCategoryDoesNotExist_ReturnsFalse()
     {
-        // Arrange
         var (svc, _, _) = Build();
 
-        // Act
         var result = await svc.DeactivateAsync(99999);
 
-        // Assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task DeactivateAsync_WhenCategoryHasProducts_ThrowsInvalidOperationException()
     {
-        // Arrange
         var (svc, _, db) = Build();
 
         var category = new Category
@@ -171,7 +156,6 @@ public class CategoryTests
         db.Products.Add(product);
         await db.SaveChangesAsync();
 
-        // Act + Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => svc.DeactivateAsync(category.CategoryId)
         );

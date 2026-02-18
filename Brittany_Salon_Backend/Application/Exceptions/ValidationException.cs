@@ -19,6 +19,16 @@ namespace Brittany_Salon_Backend.Application.Exceptions
     }
 
     /// <summary>
+    /// Excepción para recursos no encontrados
+    /// </summary>
+    public class NotFoundException : Exception
+    {
+        public NotFoundException(string message) : base(message)
+        {
+        }
+    }
+
+    /// <summary>
     /// Excepción para recursos duplicados
     /// </summary>
     public class DuplicateResourceException : Exception
