@@ -108,22 +108,11 @@ namespace Brittany_Salon_Backend.Application.Services
                 throw new Exception($"El cliente con ID {dto.ClientId} no existe");
             }
 
-            if (dto.EmployeeId.HasValue)
-            {
-                var employeeExists = await _db.Employees.AnyAsync(e => e.Id == dto.EmployeeId.Value);
-                if (!employeeExists)
-                {
-                    _logger.LogWarning("Empleado con ID {EmployeeId} no existe", dto.EmployeeId.Value);
-                    throw new Exception($"El empleado con ID {dto.EmployeeId.Value} no existe");
-                }
-            }
-
             var review = new Review
             {
                 Comment = dto.Comment,
                 Rating = dto.Rating,
                 ClientId = dto.ClientId,
-                EmployeeId = dto.EmployeeId,
                 ReviewDate = DateTime.Now
             };
 
@@ -133,6 +122,36 @@ namespace Brittany_Salon_Backend.Application.Services
             _logger.LogInfo("Reseña creada exitosamente con ID: {ReviewId}", review.ReviewId);
 
             return await GetByIdAsync(review.ReviewId) ?? throw new Exception("Error al recuperar la reseña creada");
+        }
+
+        public async Task<ReviewReadDto?> AddResponseAsync(int reviewId, ReviewResponseDto dto)
+        {
+            _logger.LogInfo("Iniciando adición de respuesta a reseña con ID: {ReviewId}", reviewId);
+
+            var review = await _db.Reviews.FirstOrDefaultAsync(r => r.ReviewId == reviewId);
+            if (review == null)
+            {
+                _logger.LogWarning("Reseña con ID {ReviewId} no encontrada", reviewId);
+                return null;
+            }
+
+            // Verificar que el empleado existe
+            var employeeExists = await _db.Employees.AnyAsync(e => e.Id == dto.EmployeeId);
+            if (!employeeExists)
+            {
+                _logger.LogWarning("Empleado con ID {EmployeeId} no existe", dto.EmployeeId);
+                throw new Exception($"El empleado con ID {dto.EmployeeId} no existe");
+            }
+
+            review.Response = dto.Response;
+            review.EmployeeId = dto.EmployeeId;
+
+            _db.Reviews.Update(review);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Respuesta agregada a reseña con ID {ReviewId} por empleado {EmployeeId}", reviewId, dto.EmployeeId);
+
+            return await GetByIdAsync(reviewId);
         }
 
         public async Task<bool> UpdateAsync(int id, ReviewUpdateDto dto)
@@ -210,7 +229,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 Response = review.Response,
                 ReviewDate = review.ReviewDate,
                 ClientId = review.ClientId,
-                EmployeeId = review.EmployeeId ?? 0,
+                EmployeeId = review.EmployeeId,
                 ClientName = review.Client?.Name,
                 EmployeeName = review.Employee?.Name
             };

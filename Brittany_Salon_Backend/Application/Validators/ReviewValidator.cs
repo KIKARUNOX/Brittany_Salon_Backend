@@ -19,9 +19,29 @@ namespace Brittany_Salon_Backend.Application.Validators
             }
             errors.AddRange(ValidateClientId(dto.ClientId));
 
-            if (dto.EmployeeId.HasValue)
+            if (errors.Count > 0)
             {
-                errors.AddRange(ValidateEmployeeId(dto.EmployeeId.Value));
+                logger?.LogWarning("Validación fallida con {Count} errores: {Errors}", errors.Count, string.Join(", ", errors));
+            }
+            else
+            {
+                logger?.LogInfo("Validación exitosa para reseña del cliente: {ClientId}", dto.ClientId);
+            }
+
+            return errors;
+        }
+
+        public static List<string> ValidateResponse(ReviewResponseDto dto, IDevLogger? logger = null)
+        {
+            var errors = new List<string>();
+
+            logger?.LogDebug("Iniciando validación de respuesta a reseña...");
+
+            errors.AddRange(ValidateEmployeeId(dto.EmployeeId));
+
+            if (!string.IsNullOrWhiteSpace(dto.Response))
+            {
+                errors.AddRange(ValidateResponseText(dto.Response));
             }
 
             if (errors.Count > 0)
@@ -30,7 +50,7 @@ namespace Brittany_Salon_Backend.Application.Validators
             }
             else
             {
-                logger?.LogInfo("Validación exitosa para reseña del cliente: {ClientId}", dto.ClientId);
+                logger?.LogInfo("Validación exitosa para respuesta de empleado: {EmployeeId}", dto.EmployeeId);
             }
 
             return errors;
@@ -105,6 +125,21 @@ namespace Brittany_Salon_Backend.Application.Validators
 
             if (trimmed.Length > 255)
                 errors.Add("La respuesta no puede exceder 255 caracteres.");
+
+            return errors;
+        }
+
+        private static List<string> ValidateResponseText(string response)
+        {
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(response))
+                return errors;
+
+            var trimmed = response.Trim();
+
+            if (trimmed.Length > 500)
+                errors.Add("La respuesta no puede exceder 500 caracteres.");
 
             return errors;
         }

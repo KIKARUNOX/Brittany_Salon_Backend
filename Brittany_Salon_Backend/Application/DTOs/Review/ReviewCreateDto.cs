@@ -12,8 +12,7 @@ namespace Brittany_Salon_Backend.Application.DTOs.Review
         public int Rating { get; set; }
 
         [Required(ErrorMessage = "El ID del cliente es obligatorio.")]
+        [Range(1, int.MaxValue, ErrorMessage = "El ID del cliente debe ser mayor a 0.")]
         public int ClientId { get; set; }
-
-        public int? EmployeeId { get; set; }
     }
 }

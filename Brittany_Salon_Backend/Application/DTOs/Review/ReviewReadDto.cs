@@ -9,7 +9,7 @@ namespace Brittany_Salon_Backend.Application.DTOs.Review
         public string? Response { get; set; }
         public DateTime ReviewDate { get; set; }
         public int ClientId { get; set; }
-        public int EmployeeId { get; set; }
+        public int? EmployeeId { get; set; }
         public string? ClientName { get; set; }
         public string? EmployeeName { get; set; }
     }
