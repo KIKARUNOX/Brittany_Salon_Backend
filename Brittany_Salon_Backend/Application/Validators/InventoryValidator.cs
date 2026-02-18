@@ -14,7 +14,9 @@ namespace Brittany_Salon_Backend.Application.Validators
             errors.AddRange(ValidateProductId(dto.ProductId));
             errors.AddRange(ValidateQuantity(dto.Quantity));
             errors.AddRange(ValidateMinimumStock(dto.MinimumStock));
-            errors.AddRange(ValidateCategory(dto.Category));
+            errors.AddRange(ValidateMaximumStock(dto.MaximumStock, dto.MinimumStock));
+            errors.AddRange(ValidateLocation(dto.Location));
+            errors.AddRange(ValidateNotes(dto.Notes));
 
             if (errors.Count > 0)
                 logger?.LogWarning("Validación de inventario (create) fallida: {Errors}", string.Join(", ", errors));
@@ -52,15 +54,42 @@ namespace Brittany_Salon_Backend.Application.Validators
             return errors;
         }
 
-        public static List<string> ValidateCategory(string? category)
+        public static List<string> ValidateMaximumStock(int maximumStock, int minimumStock)
         {
             var errors = new List<string>();
 
-            if (!string.IsNullOrWhiteSpace(category))
+            if (maximumStock < 0)
+                errors.Add("El stock máximo no puede ser negativo.");
+
+            if (maximumStock < minimumStock)
+                errors.Add("El stock máximo debe ser mayor o igual al stock mínimo.");
+
+            return errors;
+        }
+
+        public static List<string> ValidateLocation(string? location)
+        {
+            var errors = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(location))
             {
-                var trimmed = category.Trim();
+                var trimmed = location.Trim();
+                if (trimmed.Length > 100)
+                    errors.Add("La ubicación no puede exceder 100 caracteres.");
+            }
+
+            return errors;
+        }
+
+        public static List<string> ValidateNotes(string? notes)
+        {
+            var errors = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(notes))
+            {
+                var trimmed = notes.Trim();
                 if (trimmed.Length > 255)
-                    errors.Add("La categoría no puede exceder 255 caracteres.");
+                    errors.Add("Las notas no pueden exceder 255 caracteres.");
             }
 
             return errors;

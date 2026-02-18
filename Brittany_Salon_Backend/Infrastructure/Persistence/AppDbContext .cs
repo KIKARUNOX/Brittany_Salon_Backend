@@ -286,11 +286,20 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.Property(x => x.MinimumStock)
                       .IsRequired();
 
-                entity.Property(x => x.Category)
+                entity.Property(x => x.MaximumStock)
+                      .IsRequired();
+
+                entity.Property(x => x.Location)
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Notes)
                       .HasMaxLength(255);
 
                 entity.Property(x => x.IsActive)
                       .HasDefaultValue(true);
+
+                entity.Property(x => x.LastUpdatedAt)
+                      .HasColumnType("datetime2(7)");
 
                 entity.HasOne(x => x.Product)
                       .WithMany()

@@ -26,7 +26,7 @@ namespace Brittany_Salon_Backend.Application.Services
             var inventoryItems = await _db.Inventory
                 .AsNoTracking()
                 .Where(i => i.IsActive)
-                .OrderBy(i => i.Category)
+                .OrderBy(i => i.Location)
                 .ThenBy(i => i.ProductId)
                 .Select(i => MapToReadDto(i))
                 .ToListAsync();
@@ -41,7 +41,7 @@ namespace Brittany_Salon_Backend.Application.Services
 
             var inventoryItems = await _db.Inventory
                 .AsNoTracking()
-                .OrderBy(i => i.Category)
+                .OrderBy(i => i.Location)
                 .ThenBy(i => i.ProductId)
                 .Select(i => MapToReadDto(i))
                 .ToListAsync();
@@ -106,8 +106,11 @@ namespace Brittany_Salon_Backend.Application.Services
                 ProductId = dto.ProductId,
                 Quantity = dto.Quantity,
                 MinimumStock = dto.MinimumStock,
-                Category = !string.IsNullOrWhiteSpace(dto.Category) ? dto.Category.Trim() : null,
-                IsActive = true
+                MaximumStock = dto.MaximumStock,
+                Location = !string.IsNullOrWhiteSpace(dto.Location) ? dto.Location.Trim() : null,
+                Notes = !string.IsNullOrWhiteSpace(dto.Notes) ? dto.Notes.Trim() : null,
+                IsActive = true,
+                LastUpdatedAt = DateTime.Now
             };
 
             _db.Inventory.Add(entity);
@@ -125,8 +128,11 @@ namespace Brittany_Salon_Backend.Application.Services
                 ProductId = inventory.ProductId,
                 Quantity = inventory.Quantity,
                 MinimumStock = inventory.MinimumStock,
-                Category = inventory.Category,
-                IsActive = inventory.IsActive
+                MaximumStock = inventory.MaximumStock,
+                Location = inventory.Location,
+                Notes = inventory.Notes,
+                IsActive = inventory.IsActive,
+                LastUpdatedAt = inventory.LastUpdatedAt
             };
         }
     }
