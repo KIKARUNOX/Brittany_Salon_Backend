@@ -22,12 +22,23 @@ namespace Brittany_Salon_Backend.Domain.Entities
         [Column("minimumStock")]
         public int MinimumStock { get; set; }
 
+        [Required]
+        [Column("maximumStock")]
+        public int MaximumStock { get; set; }
+
+        [MaxLength(100)]
+        [Column("location")]
+        public string? Location { get; set; }
+
         [MaxLength(255)]
-        [Column("category")]
-        public string? Category { get; set; }
+        [Column("notes")]
+        public string? Notes { get; set; }
 
         [Column("isActive")]
         public bool IsActive { get; set; } = true;
+
+        [Column("lastUpdatedAt")]
+        public DateTime? LastUpdatedAt { get; set; }
 
         [ForeignKey("ProductId")]
         public virtual Product? Product { get; set; }

@@ -15,7 +15,14 @@ namespace Brittany_Salon_Backend.Application.DTOs.Inventory
         [Range(0, int.MaxValue, ErrorMessage = "El stock mínimo no puede ser negativo.")]
         public int MinimumStock { get; set; }
 
-        [MaxLength(255, ErrorMessage = "La categoría no puede exceder 255 caracteres.")]
-        public string? Category { get; set; }
+        [Required(ErrorMessage = "El stock máximo es obligatorio.")]
+        [Range(0, int.MaxValue, ErrorMessage = "El stock máximo no puede ser negativo.")]
+        public int MaximumStock { get; set; }
+
+        [MaxLength(100, ErrorMessage = "La ubicación no puede exceder 100 caracteres.")]
+        public string? Location { get; set; }
+
+        [MaxLength(255, ErrorMessage = "Las notas no pueden exceder 255 caracteres.")]
+        public string? Notes { get; set; }
     }
 }
