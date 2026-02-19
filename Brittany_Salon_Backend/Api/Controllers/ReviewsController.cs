@@ -85,5 +85,81 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        //Actualizar una reseña (Cliente actualiza su calificación y comentario)
+        [HttpPut("{reviewId:int}/client-update")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateClient(int reviewId, [FromBody] ReviewClientUpdateDto updateDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var result = await _reviewService.UpdateAsync(reviewId, new ReviewUpdateDto { Comment = updateDto.Comment, Rating = updateDto.Rating });
+                if (!result)
+                    return NotFound(new { message = "Reseña no encontrada." });
+
+                return Ok(new { message = "Reseña actualizada exitosamente." });
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { errors = ex.Errors });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        //Actualizar respuesta de una reseña (Empleado actualiza  respuesta)
+        [HttpPut("{reviewId:int}/employee-update")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateEmployee(int reviewId, [FromBody] ReviewEmployeeUpdateDto updateDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var result = await _reviewService.UpdateAsync(reviewId, new ReviewUpdateDto { Response = updateDto.Response });
+                if (!result)
+                    return NotFound(new { message = "Reseña no encontrada." });
+
+                return Ok(new { message = "Respuesta actualizada exitosamente." });
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { errors = ex.Errors });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        //Eliminar una reseña
+        [HttpDelete("{reviewId:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int reviewId)
+        {
+            try
+            {
+                var result = await _reviewService.DeleteAsync(reviewId);
+                if (!result)
+                    return NotFound(new { message = "Reseña no encontrada." });
+
+                return Ok(new { message = "Reseña eliminada exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }
