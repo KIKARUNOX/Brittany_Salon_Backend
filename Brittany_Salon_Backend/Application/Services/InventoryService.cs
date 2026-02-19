@@ -135,5 +135,84 @@ namespace Brittany_Salon_Backend.Application.Services
                 LastUpdatedAt = inventory.LastUpdatedAt
             };
         }
+
+        /// <summary>
+        /// Descuenta la cantidad de un producto del inventario
+        /// </summary>
+        public async Task<bool> DiscountQuantityAsync(int productId, int quantity)
+        {
+            if (productId <= 0)
+            {
+                _logger.LogWarning("ProductId inválido para descuento: {ProductId}", productId);
+                return false;
+            }
+
+            if (quantity <= 0)
+            {
+                _logger.LogWarning("Cantidad inválida para descuento: {Quantity}", quantity);
+                return false;
+            }
+
+            var inventory = await _db.Inventory
+                .FirstOrDefaultAsync(i => i.ProductId == productId);
+
+            if (inventory == null)
+            {
+                _logger.LogWarning("Inventario no encontrado para ProductId: {ProductId}", productId);
+                return false;
+            }
+
+            if (inventory.Quantity < quantity)
+            {
+                _logger.LogWarning("Stock insuficiente para ProductId {ProductId}. Stock: {Stock}, Solicitado: {Requested}", 
+                    productId, inventory.Quantity, quantity);
+                return false;
+            }
+
+            inventory.Quantity -= quantity;
+            inventory.LastUpdatedAt = DateTime.Now;
+
+            _logger.LogInfo("Inventario descontado para ProductId {ProductId}: {Quantity} unidades", productId, quantity);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Descuenta múltiples productos del inventario
+        /// </summary>
+        public async Task<bool> DiscountMultipleAsync(Dictionary<int, int> products)
+        {
+            if (products == null || products.Count == 0)
+            {
+                _logger.LogWarning("Diccionario de productos vacío para descuento múltiple");
+                return false;
+            }
+
+            await using var tx = await _db.Database.BeginTransactionAsync();
+
+            try
+            {
+                foreach (var product in products)
+                {
+                    var success = await DiscountQuantityAsync(product.Key, product.Value);
+                    if (!success)
+                    {
+                        await tx.RollbackAsync();
+                        _logger.LogWarning("Fallo en descuento múltiple para ProductId {ProductId}", product.Key);
+                        return false;
+                    }
+                }
+
+                await tx.CommitAsync();
+                _logger.LogInfo("Descuento múltiple completado para {Count} productos", products.Count);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogWarning("Error en descuento múltiple: {Error}", ex.InnerException?.Message ?? ex.Message);
+                return false;
+            }
+        }
     }
 }

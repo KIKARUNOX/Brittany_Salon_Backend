@@ -9,10 +9,12 @@ namespace Brittany_Salon_Backend.Api.Controllers
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentService _appointmentService;
+        private readonly IInventoryService _inventoryService;
 
-        public AppointmentsController(IAppointmentService appointmentService)
+        public AppointmentsController(IAppointmentService appointmentService, IInventoryService inventoryService)
         {
             _appointmentService = appointmentService;
+            _inventoryService = inventoryService;
         }
 
         private ActionResult BuildBadRequest(Exception ex)
@@ -223,7 +225,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         {
             try
             {
-                var ok = await _appointmentService.CompleteAsync(id);
+                var ok = await _appointmentService.CompleteAsync(id, _inventoryService);
                 if (!ok) return NotFound(new { message = "Cita no encontrada." });
 
                 return Ok(new { message = "Cita completada." });

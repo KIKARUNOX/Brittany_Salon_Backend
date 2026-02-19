@@ -506,12 +506,13 @@ namespace Brittany_Salon_Backend.Application.Services
             return true;
         }
 
-        public async Task<bool> CompleteAsync(int appointmentId)
+        public async Task<bool> CompleteAsync(int appointmentId, IInventoryService? inventoryService = null)
         {
             if (appointmentId <= 0)
                 throw new InvalidOperationException("AppointmentId inválido.");
 
             var appointment = await _db.Appointments
+                .Include(a => a.AppointmentProducts)
                 .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
             if (appointment is null) return false;
@@ -522,6 +523,8 @@ namespace Brittany_Salon_Backend.Application.Services
             if (string.Equals(appointment.AppointmentStatus, AppointmentStatuses.Cancelled, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("No se puede completar una cita cancelada.");
 
+            var previousStatus = appointment.AppointmentStatus;
+
             // Calcular saldo pendiente para determinar el estado final
             var totalPaid = await _db.Payments
                 .Where(p => p.AppointmentId == appointmentId && p.IsActive)
@@ -529,13 +532,59 @@ namespace Brittany_Salon_Backend.Application.Services
 
             var pendingBalance = (appointment.TotalCost ?? 0) - totalPaid;
 
-            appointment.AppointmentStatus = pendingBalance > 0
+            var newStatus = pendingBalance > 0
                 ? AppointmentStatuses.CompletedPendingPayment
                 : AppointmentStatuses.Finalized;
+
+            // Descontar inventario SOLO si:
+            // - Estado anterior es "Pendiente" o "Confirmada"
+            // - Estado nuevo es "Completada con saldo pendiente" o "Finalizada"
+            // - La cita tiene productos asociados
+            if (ShouldDiscountInventory(previousStatus, newStatus) && appointment.AppointmentProducts.Count > 0 && inventoryService != null)
+            {
+                var productsToDiscount = appointment.AppointmentProducts
+                    .ToDictionary(ap => ap.ProductId, ap => ap.Quantity);
+
+                var discountSuccess = await inventoryService.DiscountMultipleAsync(productsToDiscount);
+
+                if (discountSuccess)
+                {
+                    _logger.LogInfo("Inventario descontado para cita {AppointmentId}", appointmentId);
+                }
+                else
+                {
+                    _logger.LogWarning("Fallo al descontar inventario para cita {AppointmentId}", appointmentId);
+                }
+            }
+
+            appointment.AppointmentStatus = newStatus;
             appointment.IsActive = false;
 
             await _db.SaveChangesAsync();
             return true;
+        }
+
+        /// <summary>
+        /// Determina si debe descontar inventario basado en el cambio de estado
+        /// </summary>
+        private static bool ShouldDiscountInventory(string? previousStatus, string? newStatus)
+        {
+            if (string.IsNullOrWhiteSpace(previousStatus) || string.IsNullOrWhiteSpace(newStatus))
+                return false;
+
+            var prevNormalized = previousStatus.Trim().ToLower();
+            var newNormalized = newStatus.Trim().ToLower();
+
+            // Solo descontar si:
+            // - Estado anterior es "Pendiente" o "Confirmada"
+            var previousIsDiscountable = prevNormalized == AppointmentStatuses.Pending.ToLower() ||
+                                        prevNormalized == AppointmentStatuses.Confirmed.ToLower();
+
+            // - Estado nuevo es "Completada con saldo pendiente" o "Finalizada"
+            var newIsCompletionState = newNormalized == AppointmentStatuses.CompletedPendingPayment.ToLower() ||
+                                       newNormalized == AppointmentStatuses.Finalized.ToLower();
+
+            return previousIsDiscountable && newIsCompletionState;
         }
 
         public async Task<AppointmentAvailabilityResponseDto> ValidateAvailabilityAsync(AppointmentAvailabilityRequestDto dto)

@@ -149,7 +149,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                 entity.HasOne(x => x.Client)
                       .WithMany()
                       .HasForeignKey(x => x.ClientId)
-                      .OnDelete(DeleteBehavior.Restrict);              
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<AppointmentService>(entity =>
