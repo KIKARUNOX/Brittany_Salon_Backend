@@ -7,9 +7,11 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<List<ReviewReadDto>> GetAllAsync();
         Task<ReviewReadDto?> GetByIdAsync(int id);
         Task<List<ReviewReadDto>> GetByClientIdAsync(int clientId);
+        Task<ReviewReadDto?> GetByClientAndReviewIdAsync(int clientId, int reviewId);
         Task<List<ReviewReadDto>> GetByEmployeeIdAsync(int employeeId);
         Task<ReviewReadDto> CreateAsync(ReviewCreateDto dto);
         Task<ReviewReadDto?> AddResponseAsync(int reviewId, ReviewResponseDto dto);
+        Task<bool> DeleteResponseAsync(int reviewId);
         Task<bool> UpdateAsync(int id, ReviewUpdateDto dto);
         Task<bool> DeleteAsync(int id);
         Task<double> GetAverageRatingByEmployeeAsync(int employeeId);

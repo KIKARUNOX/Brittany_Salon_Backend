@@ -9,10 +9,12 @@ namespace Brittany_Salon_Backend.Api.Controllers
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentService _appointmentService;
+        private readonly IInventoryService _inventoryService;
 
-        public AppointmentsController(IAppointmentService appointmentService)
+        public AppointmentsController(IAppointmentService appointmentService, IInventoryService inventoryService)
         {
             _appointmentService = appointmentService;
+            _inventoryService = inventoryService;
         }
 
         private ActionResult BuildBadRequest(Exception ex)
@@ -76,7 +78,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-        // GET: api/appointments/by-date?date=2026-02-01
         [HttpGet("by-date")]
         public async Task<ActionResult<List<AppointmentReadDto>>> GetByDate([FromQuery] DateTime date)
         {
@@ -95,7 +96,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-        // GET: api/appointments/by-status?status=Pendiente
         [HttpGet("by-status")]
         public async Task<ActionResult<List<AppointmentReadDto>>> GetByStatus([FromQuery] string status)
         {
@@ -114,7 +114,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-        // GET: api/appointments/by-client/1
         [HttpGet("by-client/{clientId:int}")]
         public async Task<ActionResult<List<AppointmentReadDto>>> GetByClientId(int clientId)
         {
@@ -133,7 +132,6 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-        // PUT: api/appointments/10
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdatePending(int id, [FromBody] AppointmentUpdateDto dto)
         {
@@ -223,7 +221,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         {
             try
             {
-                var ok = await _appointmentService.CompleteAsync(id);
+                var ok = await _appointmentService.CompleteAsync(id, _inventoryService);
                 if (!ok) return NotFound(new { message = "Cita no encontrada." });
 
                 return Ok(new { message = "Cita completada." });
@@ -291,8 +289,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
             }
         }
 
-        // PATCH: api/appointments/{id}/change-status
-        [HttpPatch("{id:int}/change-status")]
+        [HttpPut("{id:int}/change-status")]
         public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeStatusRequestDto dto)
         {
             try
@@ -300,7 +297,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 if (!ChangeStatusRequestDto.ValidStatuses.Contains(dto.NewStatus))
                     return BadRequest(new { message = $"Estado inválido: {dto.NewStatus}" });
 
-                var ok = await _appointmentService.ChangeStatusAsync(id, dto.NewStatus);
+                var ok = await _appointmentService.ChangeStatusAsync(id, dto.NewStatus, _inventoryService);
                 if (!ok) return NotFound(new { message = "Cita no encontrada." });
 
                 return Ok(new { message = "Estado actualizado correctamente." });

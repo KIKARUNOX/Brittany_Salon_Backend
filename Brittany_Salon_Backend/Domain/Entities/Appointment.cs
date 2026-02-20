@@ -44,7 +44,7 @@ namespace Brittany_Salon_Backend.Domain.Entities
         public Clients Client { get; set; } = null!;
 
         public ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
-                public ICollection<AppointmentProduct> AppointmentProducts { get; set; } = new List<AppointmentProduct>();
-                public ICollection<Payment> Payments { get; set; } = new List<Payment>();
-            }
-        }
+        public ICollection<AppointmentProduct> AppointmentProducts { get; set; } = new List<AppointmentProduct>();
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+    }
+}
