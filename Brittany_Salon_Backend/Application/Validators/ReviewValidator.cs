@@ -18,6 +18,7 @@ namespace Brittany_Salon_Backend.Application.Validators
                 errors.AddRange(ValidateComment(dto.Comment));
             }
             errors.AddRange(ValidateClientId(dto.ClientId));
+            errors.AddRange(ValidateEmployeeId(dto.EmployeeId));
 
             if (errors.Count > 0)
             {
