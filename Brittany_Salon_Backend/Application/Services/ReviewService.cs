@@ -72,6 +72,25 @@ namespace Brittany_Salon_Backend.Application.Services
             return reviews;
         }
 
+        public async Task<ReviewReadDto?> GetByClientAndReviewIdAsync(int clientId, int reviewId)
+        {
+            _logger.LogInfo("Buscando reseña con ID {ReviewId} para cliente con ID {ClientId}", reviewId, clientId);
+
+            var review = await _db.Reviews
+                .AsNoTracking()
+                .Include(r => r.Client)
+                .Include(r => r.Employee)
+                .FirstOrDefaultAsync(r => r.ReviewId == reviewId && r.ClientId == clientId);
+
+            if (review == null)
+            {
+                _logger.LogWarning("Reseña con ID {ReviewId} no encontrada para cliente {ClientId}", reviewId, clientId);
+                return null;
+            }
+
+            return MapToReadDto(review);
+        }
+
         public async Task<List<ReviewReadDto>> GetByEmployeeIdAsync(int employeeId)
         {
             _logger.LogInfo("Obteniendo reseñas del empleado con ID: {EmployeeId}", employeeId);
@@ -152,6 +171,31 @@ namespace Brittany_Salon_Backend.Application.Services
             _logger.LogInfo("Respuesta agregada a reseña con ID {ReviewId} por empleado {EmployeeId}", reviewId, dto.EmployeeId);
 
             return await GetByIdAsync(reviewId);
+        }
+
+        public async Task<bool> DeleteResponseAsync(int reviewId)
+        {
+            _logger.LogInfo("Iniciando eliminación de respuesta de reseña con ID: {ReviewId}", reviewId);
+
+            var review = await _db.Reviews.FirstOrDefaultAsync(r => r.ReviewId == reviewId);
+            if (review == null)
+            {
+                _logger.LogWarning("Reseña con ID {ReviewId} no encontrada", reviewId);
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(review.Response))
+            {
+                _logger.LogWarning("Reseña con ID {ReviewId} no tiene respuesta para eliminar", reviewId);
+                return false;
+            }
+
+            review.Response = null;
+            _db.Reviews.Update(review);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInfo("Respuesta de reseña con ID {ReviewId} eliminada exitosamente", reviewId);
+            return true;
         }
 
         public async Task<bool> UpdateAsync(int id, ReviewUpdateDto dto)

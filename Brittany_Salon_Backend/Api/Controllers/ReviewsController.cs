@@ -38,6 +38,19 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok(reviews);
         }
 
+        //Obtener reseña específica de un cliente
+        [HttpGet("by-client/{clientId:int}/review/{reviewId:int}")]
+        [ProducesResponseType(typeof(ReviewReadDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ReviewReadDto>> GetByClientAndReviewId(int clientId, int reviewId)
+        {
+            var review = await _reviewService.GetByClientAndReviewIdAsync(clientId, reviewId);
+            if (review == null)
+                return NotFound(new { message = $"Reseña con ID {reviewId} no encontrada para el cliente con ID {clientId}." });
+
+            return Ok(review);
+        }
+
      //Crear una reseña
         [HttpPost]
         [ProducesResponseType(typeof(ReviewReadDto), StatusCodes.Status201Created)]
@@ -55,6 +68,26 @@ namespace Brittany_Salon_Backend.Api.Controllers
             catch (ValidationException ex)
             {
                 return BadRequest(new { errors = ex.Errors });
+            }
+        }
+
+        //Eliminar respuesta de una reseña (Empleado elimina su respuesta)
+        [HttpDelete("{reviewId:int}/response")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteResponse(int reviewId)
+        {
+            try
+            {
+                var result = await _reviewService.DeleteResponseAsync(reviewId);
+                if (!result)
+                    return NotFound(new { message = "Reseña no encontrada o sin respuesta." });
+
+                return Ok(new { message = "Respuesta eliminada exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
 
