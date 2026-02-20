@@ -55,7 +55,9 @@ namespace Brittany_Salon_Backend.Application.Services
                 AppointmentDate = dto.AppointmentDate,
                 StartTime = dto.StartTime,
                 EndTime = dto.StartTime,
-                AppointmentStatus = dto.AppointmentStatus,
+                AppointmentStatus = string.IsNullOrWhiteSpace(dto.AppointmentStatus) 
+                    ? AppointmentStatuses.Pending 
+                    : dto.AppointmentStatus,
                 ClientId = dto.ClientId,
                 IsActive = true,
                 HairLengthOption = hairServiceCount > 0 ? dto.HairLengthOption : null
@@ -377,7 +379,6 @@ namespace Brittany_Salon_Backend.Application.Services
             appointment.TotalCost = totalCost;
             appointment.HairLengthOption = hairServiceCount > 0 ? dto.HairLengthOption : null;
 
-            // Si estaba Confirmada, cambiar a Pendiente al editar
             if (string.Equals(appointment.AppointmentStatus, AppointmentStatuses.Confirmed, StringComparison.OrdinalIgnoreCase))
                 appointment.AppointmentStatus = AppointmentStatuses.Pending;
 
@@ -525,7 +526,9 @@ namespace Brittany_Salon_Backend.Application.Services
 
             var previousStatus = appointment.AppointmentStatus;
 
-            // Calcular saldo pendiente para determinar el estado final
+            _logger.LogInfo("CompleteAsync: Estado anterior: {PreviousStatus}, Productos: {ProductCount}, InventoryService: {HasService}",
+                previousStatus, appointment.AppointmentProducts.Count, inventoryService != null);
+
             var totalPaid = await _db.Payments
                 .Where(p => p.AppointmentId == appointmentId && p.IsActive)
                 .SumAsync(p => p.Amount);
@@ -536,25 +539,36 @@ namespace Brittany_Salon_Backend.Application.Services
                 ? AppointmentStatuses.CompletedPendingPayment
                 : AppointmentStatuses.Finalized;
 
-            // Descontar inventario SOLO si:
-            // - Estado anterior es "Pendiente" o "Confirmada"
-            // - Estado nuevo es "Completada con saldo pendiente" o "Finalizada"
-            // - La cita tiene productos asociados
-            if (ShouldDiscountInventory(previousStatus, newStatus) && appointment.AppointmentProducts.Count > 0 && inventoryService != null)
+            _logger.LogInfo("CompleteAsync: Nuevo estado: {NewStatus}, PendingBalance: {Balance}", newStatus, pendingBalance);
+
+            // Descontar del inventario
+            var shouldDiscount = ShouldDiscountInventory(previousStatus, newStatus);
+            _logger.LogInfo("CompleteAsync: ShouldDiscount: {ShouldDiscount}", shouldDiscount);
+
+            if (shouldDiscount && appointment.AppointmentProducts.Count > 0 && inventoryService != null)
             {
+                _logger.LogInfo("Descuento de inventario iniciado para cita {AppointmentId}", appointmentId);
+
                 var productsToDiscount = appointment.AppointmentProducts
                     .ToDictionary(ap => ap.ProductId, ap => ap.Quantity);
+
+                _logger.LogInfo("Productos a descontar: {Products}", string.Join(", ", productsToDiscount.Select(p => $"ProductId:{p.Key}, Qty:{p.Value}")));
 
                 var discountSuccess = await inventoryService.DiscountMultipleAsync(productsToDiscount);
 
                 if (discountSuccess)
                 {
-                    _logger.LogInfo("Inventario descontado para cita {AppointmentId}", appointmentId);
+                    _logger.LogInfo("Inventario descontado exitosamente para cita {AppointmentId}", appointmentId);
                 }
                 else
                 {
                     _logger.LogWarning("Fallo al descontar inventario para cita {AppointmentId}", appointmentId);
                 }
+            }
+            else
+            {
+                _logger.LogInfo("Descuento NO aplicado. Razones - ShouldDiscount:{SD}, HasProducts:{HP}, HasService:{HS}",
+                    shouldDiscount, appointment.AppointmentProducts.Count > 0, inventoryService != null);
             }
 
             appointment.AppointmentStatus = newStatus;
@@ -564,9 +578,6 @@ namespace Brittany_Salon_Backend.Application.Services
             return true;
         }
 
-        /// <summary>
-        /// Determina si debe descontar inventario basado en el cambio de estado
-        /// </summary>
         private static bool ShouldDiscountInventory(string? previousStatus, string? newStatus)
         {
             if (string.IsNullOrWhiteSpace(previousStatus) || string.IsNullOrWhiteSpace(newStatus))
@@ -575,12 +586,9 @@ namespace Brittany_Salon_Backend.Application.Services
             var prevNormalized = previousStatus.Trim().ToLower();
             var newNormalized = newStatus.Trim().ToLower();
 
-            // Solo descontar si:
-            // - Estado anterior es "Pendiente" o "Confirmada"
             var previousIsDiscountable = prevNormalized == AppointmentStatuses.Pending.ToLower() ||
                                         prevNormalized == AppointmentStatuses.Confirmed.ToLower();
 
-            // - Estado nuevo es "Completada con saldo pendiente" o "Finalizada"
             var newIsCompletionState = newNormalized == AppointmentStatuses.CompletedPendingPayment.ToLower() ||
                                        newNormalized == AppointmentStatuses.Finalized.ToLower();
 
@@ -711,7 +719,7 @@ namespace Brittany_Salon_Backend.Application.Services
             return appointment.Client.PendingBalance;
         }
 
-        public async Task<bool> ChangeStatusAsync(int appointmentId, string newStatus)
+        public async Task<bool> ChangeStatusAsync(int appointmentId, string newStatus, IInventoryService? inventoryService = null)
         {
             if (appointmentId <= 0)
                 throw new InvalidOperationException("AppointmentId inválido.");
@@ -723,6 +731,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 throw new InvalidOperationException($"Estado inválido: {newStatus}");
 
             var appointment = await _db.Appointments
+                .Include(a => a.AppointmentProducts)
                 .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
             if (appointment is null)
@@ -761,6 +770,30 @@ namespace Brittany_Salon_Backend.Application.Services
                 throw new InvalidOperationException("No se puede cambiar el estado de una cita cancelada.");
             }
 
+            
+            var shouldDiscount = ShouldDiscountInventoryOnStatusChange(currentStatus, newStatus);
+
+            if (shouldDiscount && appointment.AppointmentProducts.Count > 0 && inventoryService != null)
+            {
+                _logger.LogInfo("Descuento de inventario iniciado en ChangeStatus para cita {AppointmentId}", appointmentId);
+
+                var productsToDiscount = appointment.AppointmentProducts
+                    .ToDictionary(ap => ap.ProductId, ap => ap.Quantity);
+
+                _logger.LogInfo("Productos a descontar: {Products}", string.Join(", ", productsToDiscount.Select(p => $"ProductId:{p.Key}, Qty:{p.Value}")));
+
+                var discountSuccess = await inventoryService.DiscountMultipleAsync(productsToDiscount);
+
+                if (discountSuccess)
+                {
+                    _logger.LogInfo("Inventario descontado exitosamente en ChangeStatus para cita {AppointmentId}", appointmentId);
+                }
+                else
+                {
+                    _logger.LogWarning("Fallo al descontar inventario en ChangeStatus para cita {AppointmentId}", appointmentId);
+                }
+            }
+
             appointment.AppointmentStatus = newStatus;
 
             if (AppointmentStatuses.IsFinalState(newStatus))
@@ -768,6 +801,30 @@ namespace Brittany_Salon_Backend.Application.Services
 
             await _db.SaveChangesAsync();
             return true;
+        }
+
+
+        private static bool ShouldDiscountInventoryOnStatusChange(string? currentStatus, string? newStatus)
+        {
+            if (string.IsNullOrWhiteSpace(currentStatus) || string.IsNullOrWhiteSpace(newStatus))
+                return false;
+
+            var currNormalized = currentStatus.Trim().ToLower();
+            var newNormalized = newStatus.Trim().ToLower();
+
+            var isConfirmedToFinal = currNormalized == AppointmentStatuses.Confirmed.ToLower() &&
+                                     newNormalized == AppointmentStatuses.Finalized.ToLower();
+
+            var isConfirmedToCompleted = currNormalized == AppointmentStatuses.Confirmed.ToLower() &&
+                                        newNormalized == AppointmentStatuses.CompletedPendingPayment.ToLower();
+
+            var isPendingToCompleted = currNormalized == AppointmentStatuses.Pending.ToLower() &&
+                                      newNormalized == AppointmentStatuses.CompletedPendingPayment.ToLower();
+
+            var isPendingToFinal = currNormalized == AppointmentStatuses.Pending.ToLower() &&
+                                  newNormalized == AppointmentStatuses.Finalized.ToLower();
+
+            return isConfirmedToFinal || isConfirmedToCompleted || isPendingToCompleted || isPendingToFinal;
         }
     }
 }
