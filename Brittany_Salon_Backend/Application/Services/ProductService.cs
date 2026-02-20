@@ -34,28 +34,68 @@ namespace Brittany_Salon_Backend.Application.Services
             if (categoryErrors.Count > 0)
                 throw new ValidationException(categoryErrors);
 
-            var entity = new Product
-            {
-                ProductName = dto.ProductName.Trim(),
-                ProductDescription = dto.ProductDescription?.Trim(),
-                Price = dto.Price,
-                ImageUrl = null,
-                ExpirationDate = dto.ExpirationDate,
-                IsActive = true,
-                CategoryId = dto.CategoryId
-            };
+            var normalizedProductName = dto.ProductName.Trim().ToLower();
+            var productExists = await _db.Products
+                .AnyAsync(p => p.ProductName.ToLower() == normalizedProductName);
 
-            _db.Products.Add(entity);
-            await _db.SaveChangesAsync();
-
-            if (dto.Image != null && dto.Image.Length > 0)
+            if (productExists)
             {
-                await ProcessProductImageAsync(entity, dto.Image);
+                _logger.LogWarning("Intento de crear producto duplicado: {ProductName}", dto.ProductName);
+                throw new InvalidOperationException($"Ya existe un producto con el nombre '{dto.ProductName}'.");
             }
 
-            await _db.Entry(entity).Reference(p => p.Category).LoadAsync();
+            await using var tx = await _db.Database.BeginTransactionAsync();
 
-            return MapToReadDto(entity);
+            try
+            {
+                var entity = new Product
+                {
+                    ProductName = dto.ProductName.Trim(),
+                    ProductDescription = dto.ProductDescription?.Trim(),
+                    Price = dto.Price,
+                    ImageUrl = null,
+                    ExpirationDate = dto.ExpirationDate,
+                    IsActive = true,
+                    CategoryId = dto.CategoryId
+                };
+
+                _db.Products.Add(entity);
+                await _db.SaveChangesAsync();
+
+                var inventory = new Inventory
+                {
+                    ProductId = entity.ProductId,
+                    Quantity = 0,
+                    MinimumStock = 0,
+                    MaximumStock = 0,
+                    Location = null,
+                    Notes = null,
+                    IsActive = true,
+                    LastUpdatedAt = DateTime.UtcNow
+                };
+
+                _db.Inventory.Add(inventory);
+                await _db.SaveChangesAsync();
+
+                _logger.LogInfo("Producto creado con inventario vacío. ProductId: {ProductId}, InventoryId: {InventoryId}", 
+                    entity.ProductId, inventory.InventoryId);
+
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    await ProcessProductImageAsync(entity, dto.Image);
+                }
+
+                await _db.Entry(entity).Reference(p => p.Category).LoadAsync();
+                await tx.CommitAsync();
+
+                return MapToReadDto(entity);
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogWarning("Error al crear producto e inventario: {Error}", ex.Message);
+                throw;
+            }
         }
 
 

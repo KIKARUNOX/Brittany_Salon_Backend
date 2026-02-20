@@ -136,9 +136,7 @@ namespace Brittany_Salon_Backend.Application.Services
             };
         }
 
-        /// <summary>
-        /// Descuenta la cantidad de un producto del inventario
-        /// </summary>
+       
         public async Task<bool> DiscountQuantityAsync(int productId, int quantity)
         {
             if (productId <= 0)
@@ -177,9 +175,6 @@ namespace Brittany_Salon_Backend.Application.Services
             return true;
         }
 
-        /// <summary>
-        /// Descuenta múltiples productos del inventario
-        /// </summary>
         public async Task<bool> DiscountMultipleAsync(Dictionary<int, int> products)
         {
             if (products == null || products.Count == 0)
@@ -213,6 +208,82 @@ namespace Brittany_Salon_Backend.Application.Services
                 _logger.LogWarning("Error en descuento múltiple: {Error}", ex.InnerException?.Message ?? ex.Message);
                 return false;
             }
+        }
+
+        public async Task<bool> DeleteAsync(int inventoryId)
+        {
+            if (inventoryId <= 0)
+            {
+                _logger.LogWarning("InventoryId inválido para eliminación: {InventoryId}", inventoryId);
+                return false;
+            }
+
+            var inventory = await _db.Inventory
+                .FirstOrDefaultAsync(i => i.InventoryId == inventoryId);
+
+            if (inventory == null)
+            {
+                _logger.LogWarning("Inventario no encontrado para eliminación: {InventoryId}", inventoryId);
+                return false;
+            }
+
+            if (inventory.Quantity != 0)
+            {
+                _logger.LogWarning("No se puede eliminar inventario con productos. InventoryId: {InventoryId}, Quantity: {Quantity}", 
+                    inventoryId, inventory.Quantity);
+                throw new InvalidOperationException($"No se puede eliminar el inventario. Hay {inventory.Quantity} unidades en stock. Debe reducir el stock a 0 antes de eliminar.");
+            }
+
+            inventory.IsActive = false;
+            inventory.LastUpdatedAt = DateTime.Now;
+
+            _logger.LogInfo("Inventario eliminado (borrado lógico) para InventoryId: {InventoryId}", inventoryId);
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+       
+        public async Task<bool> UpdateAsync(int inventoryId, InventoryUpdateDto dto)
+        {
+            if (inventoryId <= 0)
+            {
+                _logger.LogWarning("InventoryId inválido para actualización: {InventoryId}", inventoryId);
+                return false;
+            }
+
+            var inventory = await _db.Inventory
+                .FirstOrDefaultAsync(i => i.InventoryId == inventoryId);
+
+            if (inventory == null)
+            {
+                _logger.LogWarning("Inventario no encontrado para actualización: {InventoryId}", inventoryId);
+                return false;
+            }
+
+            if (dto.MaximumStock < dto.MinimumStock)
+            {
+                _logger.LogWarning("Stock máximo no puede ser menor que mínimo. Max: {Max}, Min: {Min}", 
+                    dto.MaximumStock, dto.MinimumStock);
+                throw new InvalidOperationException("El stock máximo debe ser mayor o igual al stock mínimo.");
+            }
+
+            if (dto.Quantity > dto.MaximumStock)
+            {
+                _logger.LogWarning("Cantidad no puede exceder stock máximo. Qty: {Qty}, Max: {Max}", 
+                    dto.Quantity, dto.MaximumStock);
+                throw new InvalidOperationException("La cantidad no puede exceder el stock máximo.");
+            }
+
+            inventory.Quantity = dto.Quantity;
+            inventory.MinimumStock = dto.MinimumStock;
+            inventory.MaximumStock = dto.MaximumStock;
+            inventory.Location = !string.IsNullOrWhiteSpace(dto.Location) ? dto.Location.Trim() : null;
+            inventory.Notes = !string.IsNullOrWhiteSpace(dto.Notes) ? dto.Notes.Trim() : null;
+            inventory.LastUpdatedAt = DateTime.Now;
+
+            _logger.LogInfo("Inventario actualizado para InventoryId: {InventoryId}", inventoryId);
+            await _db.SaveChangesAsync();
+            return true;
         }
     }
 }
