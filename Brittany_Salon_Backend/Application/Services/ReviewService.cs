@@ -198,9 +198,9 @@ namespace Brittany_Salon_Backend.Application.Services
             return true;
         }
 
-        public async Task<bool> UpdateAsync(int id, ReviewUpdateDto dto)
+        public async Task<bool> UpdateAsync(int id, int clientId, ReviewUpdateDto dto)
         {
-            _logger.LogInfo("Iniciando actualización de reseña con ID: {Id}", id);
+            _logger.LogInfo("Iniciando actualización de reseña con ID: {Id} para cliente: {ClientId}", id, clientId);
 
             var validationErrors = ReviewValidator.ValidateUpdate(dto, _logger);
             if (validationErrors.Count > 0)
@@ -214,6 +214,13 @@ namespace Brittany_Salon_Backend.Application.Services
             {
                 _logger.LogWarning("Reseña con ID {Id} no encontrada", id);
                 return false;
+            }
+
+            // Validar que la reseña pertenezca al cliente
+            if (review.ClientId != clientId)
+            {
+                _logger.LogWarning("Cliente {ClientId} intentó actualizar reseña que pertenece a cliente {OwnerClientId}", clientId, review.ClientId);
+                throw new Exception($"No tienes permiso para actualizar esta reseña");
             }
 
             if (!string.IsNullOrWhiteSpace(dto.Comment))
@@ -232,15 +239,22 @@ namespace Brittany_Salon_Backend.Application.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id, int clientId)
         {
-            _logger.LogInfo("Iniciando eliminación de reseña con ID: {Id}", id);
+            _logger.LogInfo("Iniciando eliminación de reseña con ID: {Id} para cliente: {ClientId}", id, clientId);
 
             var review = await _db.Reviews.FirstOrDefaultAsync(r => r.ReviewId == id);
             if (review == null)
             {
                 _logger.LogWarning("Reseña con ID {Id} no encontrada", id);
                 return false;
+            }
+
+            // Validar que la reseña pertenezca al cliente
+            if (review.ClientId != clientId)
+            {
+                _logger.LogWarning("Cliente {ClientId} intentó eliminar reseña que pertenece a cliente {OwnerClientId}", clientId, review.ClientId);
+                throw new Exception($"No tienes permiso para eliminar esta reseña");
             }
 
             _db.Reviews.Remove(review);

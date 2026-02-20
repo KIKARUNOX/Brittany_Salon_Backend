@@ -12,8 +12,8 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<ReviewReadDto> CreateAsync(ReviewCreateDto dto);
         Task<ReviewReadDto?> AddResponseAsync(int reviewId, ReviewResponseDto dto);
         Task<bool> DeleteResponseAsync(int reviewId);
-        Task<bool> UpdateAsync(int id, ReviewUpdateDto dto);
-        Task<bool> DeleteAsync(int id);
+        Task<bool> UpdateAsync(int id, int clientId, ReviewUpdateDto dto);
+        Task<bool> DeleteAsync(int id, int clientId);
         Task<double> GetAverageRatingByEmployeeAsync(int employeeId);
     }
 }

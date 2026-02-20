@@ -124,14 +124,15 @@ namespace Brittany_Salon_Backend.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdateClient(int reviewId, [FromBody] ReviewClientUpdateDto updateDto)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> UpdateClient(int reviewId, [FromQuery] int clientId, [FromBody] ReviewClientUpdateDto updateDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                var result = await _reviewService.UpdateAsync(reviewId, new ReviewUpdateDto { Comment = updateDto.Comment, Rating = updateDto.Rating });
+                var result = await _reviewService.UpdateAsync(reviewId, clientId, new ReviewUpdateDto { Comment = updateDto.Comment, Rating = updateDto.Rating });
                 if (!result)
                     return NotFound(new { message = "Reseña no encontrada." });
 
@@ -159,7 +160,13 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
             try
             {
-                var result = await _reviewService.UpdateAsync(reviewId, new ReviewUpdateDto { Response = updateDto.Response });
+                // Los empleados pueden actualizar la respuesta sin validación de clientId
+                // Se obtiene el clientId de la reseña actual
+                var review = await _reviewService.GetByIdAsync(reviewId);
+                if (review == null)
+                    return NotFound(new { message = "Reseña no encontrada." });
+
+                var result = await _reviewService.UpdateAsync(reviewId, review.ClientId, new ReviewUpdateDto { Response = updateDto.Response });
                 if (!result)
                     return NotFound(new { message = "Reseña no encontrada." });
 
@@ -179,11 +186,12 @@ namespace Brittany_Salon_Backend.Api.Controllers
         [HttpDelete("{reviewId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(int reviewId)
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> Delete(int reviewId, [FromQuery] int clientId)
         {
             try
             {
-                var result = await _reviewService.DeleteAsync(reviewId);
+                var result = await _reviewService.DeleteAsync(reviewId, clientId);
                 if (!result)
                     return NotFound(new { message = "Reseña no encontrada." });
 
