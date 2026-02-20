@@ -132,6 +132,7 @@ namespace Brittany_Salon_Backend.Application.Services
                 Comment = dto.Comment,
                 Rating = dto.Rating,
                 ClientId = dto.ClientId,
+                EmployeeId = dto.EmployeeId,
                 ReviewDate = DateTime.Now
             };
 
