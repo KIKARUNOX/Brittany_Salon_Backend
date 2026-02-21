@@ -290,7 +290,9 @@ namespace Brittany_Salon_Backend.Application.Services
                 ClientId = review.ClientId,
                 EmployeeId = review.EmployeeId,
                 ClientName = review.Client?.Name,
-                EmployeeName = review.Employee?.Name
+                EmployeeName = review.Employee?.Name,
+                ClientImageUrl = review.Client?.ImageUrl,
+                EmployeeImageUrl = review.Employee?.Image
             };
         }
     }
