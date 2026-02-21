@@ -137,6 +137,27 @@ namespace Brittany_Salon_Backend.Application.Services
                 if (products.Count != productIds.Count)
                     throw new InvalidOperationException("Uno o más productos no existen.");
 
+                
+                var inventories = await _db.Inventory
+                    .Where(i => productIds.Contains(i.ProductId) && i.IsActive)
+                    .ToDictionaryAsync(i => i.ProductId, i => i);
+
+                
+                if (inventories.Count != productIds.Count)
+                    throw new InvalidOperationException("Uno o más productos no tienen inventario activo.");
+
+                
+                foreach (var item in normalizedProducts)
+                {
+                    var inv = inventories[item.ProductId];
+
+                    if (item.Quantity > inv.Quantity)
+                        throw new InvalidOperationException(
+                            $"Stock insuficiente para \"{inv.Product.ProductName}\". Disponible: {inv.Quantity}, solicitado: {item.Quantity}"
+                        );
+                }
+
+
                 foreach (var item in normalizedProducts)
                 {
                     var product = products[item.ProductId];
@@ -351,6 +372,25 @@ namespace Brittany_Salon_Backend.Application.Services
 
                 if (productDict.Count != productIds.Count)
                     throw new InvalidOperationException("Uno o más productos no existen.");
+
+                var inventories = await _db.Inventory
+                    .Where(i => productIds.Contains(i.ProductId) && i.IsActive)
+                    .ToDictionaryAsync(i => i.ProductId, i => i);
+
+                if (inventories.Count != productIds.Count)
+                    throw new InvalidOperationException("Uno o más productos no tienen inventario activo.");
+
+                foreach (var item in normalizedProducts)
+                {
+                    var inv = inventories[item.ProductId];
+                    var productName = productDict[item.ProductId].ProductName;
+
+                    if (item.Quantity > inv.Quantity)
+                        throw new InvalidOperationException(                       
+                            $"Stock insuficiente para \"{productName}\". Disponible: {inv.Quantity}, solicitado: {item.Quantity}"
+                        );
+                }
+
 
                 foreach (var item in normalizedProducts)
                 {
