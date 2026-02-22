@@ -127,6 +127,23 @@ namespace Brittany_Salon_Backend.Application.Services
                 throw new Exception($"El cliente con ID {dto.ClientId} no existe");
             }
 
+            // Verificar que el empleado existe
+            var employeeExists = await _db.Employees.AnyAsync(e => e.Id == dto.EmployeeId);
+            if (!employeeExists)
+            {
+                _logger.LogWarning("Empleado con ID {EmployeeId} no existe", dto.EmployeeId);
+                throw new Exception($"El empleado con ID {dto.EmployeeId} no existe");
+            }
+
+            // Verificar que no exista una reseña previa del mismo cliente para el mismo empleado
+            var existingReview = await _db.Reviews.FirstOrDefaultAsync(r => 
+                r.ClientId == dto.ClientId && r.EmployeeId == dto.EmployeeId);
+            if (existingReview != null)
+            {
+                _logger.LogWarning("Ya existe una reseña del cliente {ClientId} para el empleado {EmployeeId}", dto.ClientId, dto.EmployeeId);
+                throw new Exception($"Ya existe una reseña de este cliente para este empleado");
+            }
+
             var review = new Review
             {
                 Comment = dto.Comment,
@@ -153,6 +170,13 @@ namespace Brittany_Salon_Backend.Application.Services
             {
                 _logger.LogWarning("Reseña con ID {ReviewId} no encontrada", reviewId);
                 return null;
+            }
+
+            // Verificar que no exista una respuesta previa
+            if (!string.IsNullOrWhiteSpace(review.Response))
+            {
+                _logger.LogWarning("Reseña con ID {ReviewId} ya tiene una respuesta previa", reviewId);
+                throw new Exception($"Esta reseña ya tiene una respuesta");
             }
 
             // Verificar que el empleado existe
