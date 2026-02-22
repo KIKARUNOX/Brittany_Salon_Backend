@@ -130,5 +130,24 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpPut("{id}/reactivate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            try
+            {
+                var ok = await _inventoryService.ReactivateAsync(id);
+                if (!ok)
+                    return NotFound(new { message = "Inventario no encontrado." });
+
+                return Ok(new { message = "Inventario reactivado exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

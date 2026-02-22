@@ -87,18 +87,24 @@ namespace Brittany_Salon_Backend.Application.Services
         {
             _logger.LogInfo("Iniciando creación de registro de inventario para producto ID: {ProductId}", dto.ProductId);
 
-            var productExists = await _db.Products.AnyAsync(p => p.ProductId == dto.ProductId);
-            if (!productExists)
+            var product = await _db.Products
+            .Where(p => p.ProductId == dto.ProductId)
+            .Select(p => new { p.ProductId, p.ProductName })
+            .FirstOrDefaultAsync();
+
+            if (product == null)
             {
-                _logger.LogWarning("Producto con ID {ProductId} no encontrado", dto.ProductId);
                 throw new NotFoundException($"El producto con ID {dto.ProductId} no existe");
             }
 
-            var inventoryExists = await _db.Inventory.AnyAsync(i => i.ProductId == dto.ProductId);
+            var inventoryExists = await _db.Inventory
+                .AnyAsync(i => i.ProductId == dto.ProductId);
+
             if (inventoryExists)
             {
-                _logger.LogWarning("Ya existe un inventario para el producto ID {ProductId}", dto.ProductId);
-                throw new InvalidOperationException($"Ya existe un registro de inventario para el producto ID {dto.ProductId}");
+                throw new InvalidOperationException(
+                    $"Ya existe un registro de inventario para el producto \"{product.ProductName}\""
+                );
             }
 
             var entity = new Inventory
@@ -283,6 +289,38 @@ namespace Brittany_Salon_Backend.Application.Services
 
             _logger.LogInfo("Inventario actualizado para InventoryId: {InventoryId}", inventoryId);
             await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ReactivateAsync(int inventoryId)
+        {
+            if (inventoryId <= 0)
+            {
+                _logger.LogWarning("InventoryId inválido para reactivación: {InventoryId}", inventoryId);
+                return false;
+            }
+
+            var inventory = await _db.Inventory
+                .FirstOrDefaultAsync(i => i.InventoryId == inventoryId);
+
+            if (inventory == null)
+            {
+                _logger.LogWarning("Inventario no encontrado para reactivación: {InventoryId}", inventoryId);
+                return false;
+            }
+
+            if (inventory.IsActive)
+            {
+                _logger.LogInfo("Inventario ya está activo. InventoryId: {InventoryId}", inventoryId);
+                return true; // ya estaba activo, no es error
+            }
+
+            inventory.IsActive = true;
+            inventory.LastUpdatedAt = DateTime.Now;
+
+            _logger.LogInfo("Inventario reactivado para InventoryId: {InventoryId}", inventoryId);
+            await _db.SaveChangesAsync();
+
             return true;
         }
     }

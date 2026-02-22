@@ -13,5 +13,7 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<bool> DiscountMultipleAsync(Dictionary<int, int> products);
         Task<bool> DeleteAsync(int inventoryId);
         Task<bool> UpdateAsync(int inventoryId, InventoryUpdateDto dto);
+
+        Task<bool> ReactivateAsync(int inventoryId);
     }
 }
