@@ -246,24 +246,78 @@ namespace Brittany_Salon_Backend.Application.Services
 
         public async Task<bool> DeactivateAsync(int id)
         {
-            var entity = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == id);
-            if (entity is null) return false;
+            await using var tx = await _db.Database.BeginTransactionAsync();
 
-            entity.IsActive = false;
-            await _db.SaveChangesAsync();
-            return true;
+            try
+            {
+                var product = await _db.Products
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
+
+                if (product is null) return false;
+
+                if (!product.IsActive) return true; // ya está desactivado
+
+                product.IsActive = false;
+
+                // Desactivar inventario asociado (si existe)
+                var inventory = await _db.Inventory
+                    .FirstOrDefaultAsync(i => i.ProductId == id);
+
+                if (inventory != null)
+                {
+                    inventory.IsActive = false;
+                    inventory.LastUpdatedAt = DateTime.UtcNow;
+                }
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogWarning("Error desactivando producto/inventario. ProductId: {ProductId}. Error: {Error}",
+                    id, ex.InnerException?.Message ?? ex.Message);
+                throw;
+            }
         }
 
         public async Task<bool> ReactivateAsync(int id)
         {
-            var entity = await _db.Products.FindAsync(id);
-            if (entity is null) return false;
+            await using var tx = await _db.Database.BeginTransactionAsync();
 
-            if (entity.IsActive) return true;
+            try
+            {
+                var product = await _db.Products
+                    .FirstOrDefaultAsync(p => p.ProductId == id);
 
-            entity.IsActive = true;
-            await _db.SaveChangesAsync();
-            return true;
+                if (product is null) return false;
+
+                if (product.IsActive) return true; // ya está activo
+
+                product.IsActive = true;
+
+                // Reactivar inventario asociado (si existe)
+                var inventory = await _db.Inventory
+                    .FirstOrDefaultAsync(i => i.ProductId == id);
+
+                if (inventory != null)
+                {
+                    inventory.IsActive = true;
+                    inventory.LastUpdatedAt = DateTime.UtcNow;
+                }
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogWarning("Error reactivando producto/inventario. ProductId: {ProductId}. Error: {Error}",
+                    id, ex.InnerException?.Message ?? ex.Message);
+                throw;
+            }
         }
 
         private async Task<bool> HasAssociatedAppointmentsAsync(int productId)
