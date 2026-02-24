@@ -3,8 +3,12 @@ using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
+using Brittany_Salon_Backend.Infrastructure.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +31,34 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Configuración JWT
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
+// Autenticación con JWT
+var jwtSettings = new JwtSettings();
+builder.Configuration.GetSection(JwtSettings.SectionName).Bind(jwtSettings);
+jwtSettings.Validate();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidateAudience = true,
+        ValidAudience = jwtSettings.Audience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddScoped<IDevLogger, DevLogger>();
@@ -41,6 +73,7 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>(); // Inyecci�n 
 builder.Services.AddScoped<IImageService, ImageService>(); // Inyecci�n de dependencias Image
 builder.Services.AddScoped<IAppointmentService, AppointmentService>(); //Inyecci�n de dependencias Appointment
 builder.Services.AddScoped<IClientService, ClientService>(); // Inyecci�n de dependencias Client
+builder.Services.AddScoped<ITokenService, TokenService>(); // Inyecci�n de dependencias Token (JWT)
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyecci�n de dependencias Payment
 builder.Services.AddScoped<IProductService, ProductService>(); // Inyecci�n de dependencias Product
@@ -60,6 +93,10 @@ app.UseHttpsRedirection(); // Redirige HTTP -> HTTPS
 
 // Habilita CORS
 app.UseCors("AllowFrontend");
+
+// Autenticación JWT
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Habilita acceso a archivos est�ticos desde /imageUser
 var publicPath = Path.Combine(builder.Environment.ContentRootPath, "public");
