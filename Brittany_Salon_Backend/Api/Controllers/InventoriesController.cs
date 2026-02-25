@@ -1,11 +1,13 @@
 using Brittany_Salon_Backend.Application.DTOs.Inventory;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class InventoriesController : ControllerBase
     {
         private readonly IInventoryService _inventoryService;

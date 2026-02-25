@@ -1,12 +1,14 @@
 using Brittany_Salon_Backend.Application.DTOs.Client;
 using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ClientsController : ControllerBase
     {
         private readonly IClientService _clientService;
@@ -31,13 +33,13 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
-        /// Busca clientes por nombre (búsqueda parcial)
+        /// Busca clientes por nombre (bï¿½squeda parcial)
         /// </summary>
         /// <param name="name">Texto a buscar en el nombre</param>
         /// <param name="onlyActive">Si es true, solo retorna clientes activos</param>
         /// <returns>Lista de clientes que coinciden</returns>
         /// <response code="200">Lista de clientes encontrados</response>
-        /// <response code="400">Parámetro de búsqueda inválido</response>
+        /// <response code="400">Parï¿½metro de bï¿½squeda invï¿½lido</response>
         [HttpGet("search/by-name")]
         [ProducesResponseType(typeof(List<ClientReadDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -46,7 +48,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
             [FromQuery] bool onlyActive = false)
         {
             if (string.IsNullOrWhiteSpace(name))
-                return BadRequest(new ErrorResponse { Message = "El parámetro 'name' es requerido." });
+                return BadRequest(new ErrorResponse { Message = "El parï¿½metro 'name' es requerido." });
 
             var clients = await _clientService.SearchByNameAsync(name, onlyActive);
             return Ok(clients);
@@ -98,7 +100,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// <param name="dto">Datos del cliente a registrar (multipart/form-data)</param>
         /// <returns>Cliente creado</returns>
         /// <response code="201">Cliente creado exitosamente</response>
-        /// <response code="400">Errores de validación</response>
+        /// <response code="400">Errores de validaciï¿½n</response>
         /// <response code="409">Email ya registrado</response>
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -116,7 +118,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
             {
                 return BadRequest(new ValidationErrorResponse
                 {
-                    Message = "Se encontraron errores de validación.",
+                    Message = "Se encontraron errores de validaciï¿½n.",
                     Errors = ex.Errors
                 });
             }
@@ -135,9 +137,9 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// </summary>
         /// <param name="id">ID del cliente a actualizar</param>
         /// <param name="dto">Datos a actualizar (solo los campos proporcionados se actualizan)</param>
-        /// <returns>NoContent si se actualizó correctamente</returns>
+        /// <returns>NoContent si se actualizï¿½ correctamente</returns>
         /// <response code="204">Cliente actualizado exitosamente</response>
-        /// <response code="400">Errores de validación</response>
+        /// <response code="400">Errores de validaciï¿½n</response>
         /// <response code="404">Cliente no encontrado</response>
         /// <response code="409">Email ya registrado por otro cliente</response>
         [HttpPut("{id:int}")]
@@ -161,7 +163,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
             {
                 return BadRequest(new ValidationErrorResponse
                 {
-                    Message = "Se encontraron errores de validación.",
+                    Message = "Se encontraron errores de validaciï¿½n.",
                     Errors = ex.Errors
                 });
             }
@@ -176,10 +178,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
-        /// Desactiva un cliente (eliminación lógica)
+        /// Desactiva un cliente (eliminaciï¿½n lï¿½gica)
         /// </summary>
         /// <param name="id">ID del cliente a desactivar</param>
-        /// <returns>NoContent si se desactivó correctamente</returns>
+        /// <returns>NoContent si se desactivï¿½ correctamente</returns>
         /// <response code="204">Cliente desactivado exitosamente</response>
         /// <response code="404">Cliente no encontrado</response>
         [HttpPatch("{id:int}/deactivate")]
@@ -200,7 +202,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// </summary>
         /// <param name="id">ID del cliente</param>
         /// <param name="balance">Nuevo saldo pendiente</param>
-        /// <returns>NoContent si se actualizó correctamente</returns>
+        /// <returns>NoContent si se actualizï¿½ correctamente</returns>
         [HttpPatch("{id:int}/balance")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
