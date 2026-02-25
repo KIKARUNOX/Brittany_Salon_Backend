@@ -25,6 +25,14 @@ namespace Brittany_Salon_Backend.Api.Controllers
             return Ok(inventoryItems);
         }
 
+        [HttpGet("low-stock-alerts")]
+        [ProducesResponseType(typeof(List<InventoryReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<InventoryReadDto>>> GetLowStockAlerts()
+        {
+            var lowStockItems = await _inventoryService.GetLowStockAlertsAsync();
+            return Ok(lowStockItems);
+        }
+
         [HttpGet]
         [ProducesResponseType(typeof(List<InventoryReadDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<InventoryReadDto>>> GetAll()
