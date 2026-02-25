@@ -8,6 +8,7 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<List<InventoryReadDto>> GetAllAsync();
         Task<InventoryReadDto?> GetByIdAsync(int id);
         Task<InventoryReadDto?> GetByProductIdAsync(int productId);
+        Task<List<InventoryReadDto>> GetLowStockAlertsAsync();
         Task<InventoryReadDto> CreateAsync(InventoryCreateDto dto);
         Task<bool> DiscountQuantityAsync(int productId, int quantity);
         Task<bool> DiscountMultipleAsync(Dictionary<int, int> products);
