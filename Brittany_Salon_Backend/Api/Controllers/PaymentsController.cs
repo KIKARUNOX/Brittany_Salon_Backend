@@ -1,11 +1,13 @@
 using Brittany_Salon_Backend.Application.DTOs.Payment;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PaymentsController : ControllerBase
     {
         private readonly IPaymentService _paymentService;
@@ -124,7 +126,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// <param name="dto">Datos del pago a registrar</param>
         /// <returns>Pago creado</returns>
         /// <response code="201">Pago creado exitosamente</response>
-        /// <response code="400">Errores de validación</response>
+        /// <response code="400">Errores de validaciï¿½n</response>
         [HttpPost]
         [ProducesResponseType(typeof(PaymentReadDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -147,7 +149,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// <param name="dto">Datos del pago a registrar</param>
         /// <returns>Pago creado</returns>
         /// <response code="201">Pago creado exitosamente</response>
-        /// <response code="400">Errores de validación</response>
+        /// <response code="400">Errores de validaciï¿½n</response>
         [HttpPost("create-and-reduce-balance")]
         [ProducesResponseType(typeof(PaymentReadDto), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -169,10 +171,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// </summary>
         /// <param name="id">ID del pago a actualizar</param>
         /// <param name="dto">Datos a actualizar</param>
-        /// <returns>NoContent si se actualizó correctamente</returns>
+        /// <returns>NoContent si se actualizï¿½ correctamente</returns>
         /// <response code="204">Pago actualizado exitosamente</response>
         /// <response code="404">Pago no encontrado</response>
-        /// <response code="400">Errores de validación</response>
+        /// <response code="400">Errores de validaciï¿½n</response>
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -194,10 +196,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
-        /// Desactiva un pago (eliminación lógica)
+        /// Desactiva un pago (eliminaciï¿½n lï¿½gica)
         /// </summary>
         /// <param name="id">ID del pago a desactivar</param>
-        /// <returns>NoContent si se desactivó correctamente</returns>
+        /// <returns>NoContent si se desactivï¿½ correctamente</returns>
         /// <response code="204">Pago desactivado exitosamente</response>
         /// <response code="404">Pago no encontrado</response>
         [HttpDelete("{id:int}")]

@@ -1,11 +1,13 @@
 using Brittany_Salon_Backend.Application.DTOs.Inventory;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class InventoriesController : ControllerBase
     {
         private readonly IInventoryService _inventoryService;
@@ -21,6 +23,14 @@ namespace Brittany_Salon_Backend.Api.Controllers
         {
             var inventoryItems = await _inventoryService.GetAllActiveAsync();
             return Ok(inventoryItems);
+        }
+
+        [HttpGet("low-stock-alerts")]
+        [ProducesResponseType(typeof(List<InventoryReadDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<InventoryReadDto>>> GetLowStockAlerts()
+        {
+            var lowStockItems = await _inventoryService.GetLowStockAlertsAsync();
+            return Ok(lowStockItems);
         }
 
         [HttpGet]

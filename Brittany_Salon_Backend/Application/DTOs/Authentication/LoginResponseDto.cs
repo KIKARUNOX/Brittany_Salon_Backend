@@ -7,7 +7,12 @@
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;  // "EMPLOYEE" o "CLIENT"
-        public string Token { get; set; } = string.Empty;  // JWT (se llenará más adelante)
+        
+        // JWT Tokens
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime AccessTokenExpirationDate { get; set; }
+        public DateTime RefreshTokenExpirationDate { get; set; }
 
         // Campos específicos de EMPLOYEE
         public string? Specialty { get; set; }

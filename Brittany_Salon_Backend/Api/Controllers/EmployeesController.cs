@@ -1,12 +1,14 @@
 using Brittany_Salon_Backend.Application.DTOs.Employee;
 using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class EmployeesController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
@@ -262,12 +264,4 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
 
 
-    /// <summary>
-    /// Respuesta estandar para errores generales
-    /// </summary>
-    public class ErrorResponse
-    {
-        public string Message { get; set; } = string.Empty;
-        public string? Field { get; set; }
-    }
 }

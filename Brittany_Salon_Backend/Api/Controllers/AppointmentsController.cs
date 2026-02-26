@@ -1,11 +1,13 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Appointment;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentService _appointmentService;

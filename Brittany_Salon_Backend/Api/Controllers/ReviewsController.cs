@@ -1,12 +1,14 @@
 using Brittany_Salon_Backend.Application.DTOs.Review;
 using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ReviewsController : ControllerBase
     {
         private readonly IReviewService _reviewService;

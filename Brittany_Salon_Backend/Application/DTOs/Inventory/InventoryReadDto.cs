@@ -11,5 +11,6 @@ namespace Brittany_Salon_Backend.Application.DTOs.Inventory
         public string? Notes { get; set; }
         public bool IsActive { get; set; }
         public DateTime? LastUpdatedAt { get; set; }
+        public bool LowStockAlert { get; set; }
     }
 }

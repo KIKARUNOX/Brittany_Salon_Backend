@@ -18,6 +18,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
         public DbSet<Category> Categories { get; set; } = null!;
         public DbSet<Review> Reviews { get; set; } = null!;
         public DbSet<Inventory> Inventory { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -307,6 +308,43 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.ToTable("RefreshToken");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Token)
+                      .IsRequired()
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.UserId)
+                      .IsRequired();
+
+                entity.Property(x => x.UserType)
+                      .IsRequired()
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.ExpirationDate)
+                      .IsRequired();
+
+                entity.Property(x => x.IsRevoked)
+                      .HasDefaultValue(false);
+
+                entity.Property(x => x.CreatedAt)
+                      .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.Property(x => x.RevocationReason)
+                      .HasMaxLength(255);
+
+                // Índice para búsquedas rápidas por token
+                entity.HasIndex(x => x.Token)
+                      .IsUnique();
+
+                // Índice para búsquedas por UserId y UserType
+                entity.HasIndex(x => new { x.UserId, x.UserType });
+            });
+
         }
     }
 }
+

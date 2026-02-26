@@ -83,6 +83,22 @@ namespace Brittany_Salon_Backend.Application.Services
             return MapToReadDto(inventory);
         }
 
+        public async Task<List<InventoryReadDto>> GetLowStockAlertsAsync()
+        {
+            _logger.LogInfo("Obteniendo registros de inventario con alerta de stock bajo");
+
+            var lowStockItems = await _db.Inventory
+                .AsNoTracking()
+                .Where(i => i.IsActive && i.Quantity <= i.MinimumStock)
+                .OrderBy(i => i.Quantity)
+                .ThenBy(i => i.Location)
+                .Select(i => MapToReadDto(i))
+                .ToListAsync();
+
+            _logger.LogInfo("Se encontraron {Count} registros con stock bajo", lowStockItems.Count);
+            return lowStockItems;
+        }
+
         public async Task<InventoryReadDto> CreateAsync(InventoryCreateDto dto)
         {
             _logger.LogInfo("Iniciando creación de registro de inventario para producto ID: {ProductId}", dto.ProductId);
@@ -138,7 +154,8 @@ namespace Brittany_Salon_Backend.Application.Services
                 Location = inventory.Location,
                 Notes = inventory.Notes,
                 IsActive = inventory.IsActive,
-                LastUpdatedAt = inventory.LastUpdatedAt
+                LastUpdatedAt = inventory.LastUpdatedAt,
+                LowStockAlert = inventory.Quantity <= inventory.MinimumStock
             };
         }
 

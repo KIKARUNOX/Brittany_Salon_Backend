@@ -1,11 +1,13 @@
 ﻿using Brittany_Salon_Backend.Application.DTOs.Image;
 using Brittany_Salon_Backend.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Brittany_Salon_Backend.Controllers
 {
     [ApiController]
     [Route("api/images")]
+    [Authorize]
     public class ImagesController : ControllerBase
     {
         private readonly IImageService _imageService;
