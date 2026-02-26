@@ -484,14 +484,23 @@ $RECYCLE.BIN/
 *.swp
 
 # =============================================================================
-# PROYECTO BRITTANY SALON - Configuraciones específicas
+# PROYECTO BRITTANY SALON - Configuraciones especï¿½ficas
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Carpetas de imágenes subidas por usuarios
+# Carpetas de imï¿½genes subidas por usuarios
 # -----------------------------------------------------------------------------
 **/public/imageUser/*
 !**/public/imageUser/.gitkeep
+
+**/public/clients/*
+!**/public/clients/.gitkeep
+
+**/public/imageProduct/*
+!**/public/imageProduct/.gitkeep
+
+**/public/imageService/*
+!**/public/imageService/.gitkeep
 
 **/wwwroot/images/*
 !**/wwwroot/images/.gitkeep
@@ -503,7 +512,7 @@ $RECYCLE.BIN/
 !**/uploads/.gitkeep
 
 # -----------------------------------------------------------------------------
-# Archivos de configuración local y secretos
+# Archivos de configuraciï¿½n local y secretos
 # -----------------------------------------------------------------------------
 appsettings.Development.json
 appsettings.Local.json
@@ -536,7 +545,7 @@ secrets.json
 *.db3
 
 # -----------------------------------------------------------------------------
-# Logs de aplicación
+# Logs de aplicaciï¿½n
 # -----------------------------------------------------------------------------
 logs/
 *.log
@@ -595,7 +604,7 @@ lcov.info
 # *.insomnia.json
 
 # -----------------------------------------------------------------------------
-# Archivos auto-generados específicos del proyecto
+# Archivos auto-generados especï¿½ficos del proyecto
 # -----------------------------------------------------------------------------
 **/Generated/
 *.Generated.cs
