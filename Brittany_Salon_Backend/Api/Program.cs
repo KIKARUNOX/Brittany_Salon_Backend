@@ -80,6 +80,7 @@ builder.Services.AddScoped<IProductService, ProductService>(); // Inyecci�n de
 builder.Services.AddScoped<ICategoryService, CategoryService>(); // Inyecci�n de dependencias Category
 builder.Services.AddScoped<IReviewService, ReviewService>(); // Inyecci�n de dependencias Review
 builder.Services.AddScoped<IInventoryService, InventoryService>(); // Inyecci�n de dependencias Inventory
+builder.Services.AddScoped<IReportService, ReportService>(); // Inyecci�n de dependencias Report
 
 var app = builder.Build();
 
