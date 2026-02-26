@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SeedUsers</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Mismo paquete de BCrypt que usa el backend -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <!-- Conexión a SQL Server sin EF -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
+
+</Project>
