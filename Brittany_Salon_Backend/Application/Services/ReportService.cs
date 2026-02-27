@@ -186,5 +186,43 @@ namespace Brittany_Salon_Backend.Application.Services
                 _ => "Desconocido"
             };
         }
+
+        
+        public async Task<BusinessSummaryDto> GetBusinessSummaryAsync()
+        {
+            _logger.LogInfo("Obteniendo resumen general del negocio");
+
+            var totalRevenue = await _db.Payments
+                .AsNoTracking()
+                .Where(p => p.IsActive)
+                .SumAsync(p => p.Amount);
+
+            var completedAppointments = await _db.Appointments
+                .AsNoTracking()
+                .CountAsync(a => a.AppointmentStatus == AppointmentStatuses.Finalized ||
+                                a.AppointmentStatus == AppointmentStatuses.CompletedPendingPayment);
+
+          
+            var activeClients = await _db.Clients
+                .AsNoTracking()
+                .CountAsync(c => c.IsActive);
+
+            var activeServices = await _db.Services
+                .AsNoTracking()
+                .CountAsync(s => s.IsActive);
+
+            var summary = new BusinessSummaryDto
+            {
+                TotalRevenue = totalRevenue,
+                CompletedAppointments = completedAppointments,
+                ActiveClients = activeClients,
+                ActiveServices = activeServices
+            };
+
+            _logger.LogInfo("Resumen del negocio - Ingresos: ${Revenue}, Citas completadas: {Appointments}, Clientes activos: {Clients}, Servicios activos: {Services}",
+                summary.TotalRevenue, summary.CompletedAppointments, summary.ActiveClients, summary.ActiveServices);
+
+            return summary;
+        }
     }
 }
