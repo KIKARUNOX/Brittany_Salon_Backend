@@ -119,5 +119,25 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 });
             }
         }
+
+        /// Obtiene resumen general del negocio 
+        [HttpGet("business-summary")]
+        [ProducesResponseType(typeof(BusinessSummaryDto), StatusCodes.Status200OK)]
+        public async Task<ActionResult<BusinessSummaryDto>> GetBusinessSummary()
+        {
+            try
+            {
+                var summary = await _reportService.GetBusinessSummaryAsync();
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "Error al obtener el resumen del negocio.",
+                    detail = ex.Message
+                });
+            }
+        }
     }
 }
