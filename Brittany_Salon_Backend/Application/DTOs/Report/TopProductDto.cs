@@ -8,4 +8,4 @@ namespace Brittany_Salon_Backend.Application.DTOs.Report
         public int TotalSold { get; set; }
         public decimal TotalRevenue { get; set; }
     }
-}
+} 
