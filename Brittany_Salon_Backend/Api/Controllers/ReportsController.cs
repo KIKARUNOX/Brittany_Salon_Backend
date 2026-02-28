@@ -139,5 +139,37 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 });
             }
         }
+
+        /// Obtiene los servicios top filtrados por citas completadas o ingresos
+        [HttpGet("top-services")]
+        [ProducesResponseType(typeof(List<TopServiceDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<TopServiceDto>>> GetTopServices(
+            [FromQuery] int top = 5, 
+            [FromQuery] string orderBy = "appointments", 
+            [FromQuery] int? year = null)
+        {
+            try
+            {
+                if (top <= 0 || top > 50)
+                    return BadRequest(new { message = "El parámetro 'top' debe estar entre 1 y 50." });
+
+                if (orderBy != "appointments" && orderBy != "revenue")
+                    return BadRequest(new { message = "El parámetro 'orderBy' debe ser 'appointments' o 'revenue'." });
+
+                if (year.HasValue && (year.Value < 2000 || year.Value > DateTime.Now.Year + 1))
+                    return BadRequest(new { message = "El año debe estar entre 2000 y el próximo año." });
+
+                var topServices = await _reportService.GetTopServicesAsync(top, orderBy, year);
+                return Ok(topServices);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "Error al obtener los servicios top.",
+                    detail = ex.Message
+                });
+            }
+        }
     }
 }

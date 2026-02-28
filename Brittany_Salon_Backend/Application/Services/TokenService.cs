@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
-   //Generar y validar tokens JWT para autenticación y autorización
+    //Generar y validar tokens JWT para autenticación y autorización
     public class TokenService : ITokenService
     {
         private readonly JwtSettings _jwtSettings;
@@ -66,7 +66,7 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-   //Generar un Refresh Token aleatorio y seguro
+        //Generar un Refresh Token aleatorio y seguro
         public string GenerateRefreshToken()
         {
             try
@@ -88,7 +88,7 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-      // Extraer los claims de un Access Token expirado para validar el Refresh Token
+        // Extraer los claims de un Access Token expirado para validar el Refresh Token
         public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
         {
             try
@@ -125,7 +125,7 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-       //Valida que el token este activo
+        //Valida que el token este activo
         public bool ValidateToken(string token)
         {
             try
@@ -140,7 +140,7 @@ namespace Brittany_Salon_Backend.Application.Services
                     ValidIssuer = _jwtSettings.Issuer,
                     ValidateAudience = true,
                     ValidAudience = _jwtSettings.Audience,
-                    ValidateLifetime = true, 
+                    ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 }, out SecurityToken? validatedToken);
 
@@ -155,6 +155,25 @@ namespace Brittany_Salon_Backend.Application.Services
             {
                 _logger?.LogWarning($"Token inválido: {ex.Message}");
                 return false;
+            }
+        }
+
+        // Verifica si el token ha expirado
+        public bool IsTokenExpired(string token)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+
+                if (jwtToken == null)
+                    return true;
+
+                return jwtToken.ValidTo < DateTime.UtcNow;
+            }
+            catch
+            {
+                return true;
             }
         }
     }
