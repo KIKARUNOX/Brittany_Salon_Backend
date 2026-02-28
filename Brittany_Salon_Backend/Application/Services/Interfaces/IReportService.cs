@@ -10,5 +10,6 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<DailyTotalDto?> GetDailyTotalAsync(DateTime? date = null);
         Task<List<MonthlyRevenueDto>> GetMonthlyRevenueAsync(int? year = null);
         Task<BusinessSummaryDto> GetBusinessSummaryAsync();
+        Task<List<TopServiceDto>> GetTopServicesAsync(int top = 5, string orderBy = "appointments", int? year = null);
     }
 }

@@ -224,5 +224,69 @@ namespace Brittany_Salon_Backend.Application.Services
 
             return summary;
         }
+
+        
+        public async Task<List<TopServiceDto>> GetTopServicesAsync(int top = 5, string orderBy = "appointments", int? year = null)
+        {
+            _logger.LogInfo("Obteniendo top {Top} servicios ordenados por {OrderBy}, año: {Year}", top, orderBy, year?.ToString() ?? "todos");
+
+            try
+            {
+                var appointmentsQuery = _db.Appointments
+                    .AsNoTracking()
+                    .Where(a => a.AppointmentStatus == AppointmentStatuses.Finalized ||
+                               a.AppointmentStatus == AppointmentStatuses.CompletedPendingPayment);
+
+                if (year.HasValue)
+                {
+                    appointmentsQuery = appointmentsQuery.Where(a => a.AppointmentDate.Year == year.Value);
+                }
+                var serviceData = await appointmentsQuery
+                    .SelectMany(a => a.AppointmentServices)
+                    .GroupBy(aps => new
+                    {
+                        aps.ServiceId,
+                        aps.Service.ServiceName,
+                        aps.Service.DurationMinutes
+                    })
+                    .Select(g => new
+                    {
+                        ServiceId = g.Key.ServiceId,
+                        ServiceName = g.Key.ServiceName,
+                        DurationMinutes = g.Key.DurationMinutes,
+                        CompletedAppointments = g.Count(),
+                        TotalRevenue = g.Sum(x => x.ServicePrice ?? 0)
+                    })
+                    .ToListAsync();
+
+                var result = serviceData
+                    .Select(s => new TopServiceDto
+                    {
+                        ServiceId = s.ServiceId,
+                        ServiceName = s.ServiceName,
+                        CompletedAppointments = s.CompletedAppointments,
+                        TotalRevenue = s.TotalRevenue,
+                        TotalMinutes = s.CompletedAppointments * s.DurationMinutes
+                    })
+                    .AsEnumerable();
+
+                var orderedResult = orderBy.ToLower() switch
+                {
+                    "revenue" => result.OrderByDescending(s => s.TotalRevenue),
+                    "appointments" => result.OrderByDescending(s => s.CompletedAppointments),
+                    _ => result.OrderByDescending(s => s.CompletedAppointments)
+                };
+
+                var finalResult = orderedResult.Take(top).ToList();
+
+                _logger.LogInfo("Se encontraron {Count} servicios en el top {Top}", finalResult.Count, top);
+                return finalResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Error al obtener top servicios: {Error}", ex.Message);
+                throw;
+            }
+        }
     }
 }
