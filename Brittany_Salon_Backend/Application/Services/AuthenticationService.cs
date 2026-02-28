@@ -9,10 +9,7 @@ using BCrypt.Net;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
-    /// <summary>
-    /// Servicio de autenticación con JWT (Access Token y Refresh Token)
-    /// Soporta Employee y Client
-    /// </summary>
+   //service de auth con jwt
     public class AuthenticationService : IAuthenticationService
     {
         private readonly AppDbContext _db;
@@ -31,10 +28,7 @@ namespace Brittany_Salon_Backend.Application.Services
             _logger = logger;
             _jwtSettings = jwtSettings.Value;
         }
-
-        /// <summary>
-        /// Login: Autentica usuario y genera Access Token + Refresh Token
-        /// </summary>
+        // Autentica usuario y genera Access Token + Refresh Token
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto)
         {
             try
@@ -104,9 +98,7 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-        /// <summary>
         /// Refresca los tokens usando un Refresh Token válido
-        /// </summary>
         public async Task<RefreshTokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
         {
             try
@@ -117,8 +109,6 @@ namespace Brittany_Salon_Backend.Application.Services
                     _logger?.LogWarning("RefreshToken: Token vacío");
                     throw new ArgumentException("El refresh token es requerido.");
                 }
-
-                // Buscar el refresh token en la base de datos
                 var storedToken = await _db.RefreshTokens
                     .FirstOrDefaultAsync(rt => rt.Token == dto.RefreshToken);
 
@@ -127,22 +117,16 @@ namespace Brittany_Salon_Backend.Application.Services
                     _logger?.LogWarning($"RefreshToken: Token no encontrado en BD");
                     throw new InvalidOperationException("Refresh token inválido.");
                 }
-
-                // Validar que no esté revocado
                 if (storedToken.IsRevoked)
                 {
                     _logger?.LogWarning($"RefreshToken: Token revocado para usuario {storedToken.UserId}");
                     throw new InvalidOperationException("Este refresh token ha sido revocado.");
                 }
-
-                // Validar que no esté expirado
                 if (storedToken.ExpirationDate < DateTime.UtcNow)
                 {
                     _logger?.LogWarning($"RefreshToken: Token expirado para usuario {storedToken.UserId}");
                     throw new InvalidOperationException("Refresh token expirado.");
                 }
-
-                // Obtener datos del usuario según su tipo
                 string email, role;
                 if (storedToken.UserType == "EMPLOYEE")
                 {
@@ -167,7 +151,7 @@ namespace Brittany_Salon_Backend.Application.Services
                     role = "CLIENT";
                 }
 
-                // Generar nuevos tokens
+                // Genera nuevos tokens
                 var newAccessToken = _tokenService.GenerateAccessToken(storedToken.UserId, email, role);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
@@ -176,10 +160,10 @@ namespace Brittany_Salon_Backend.Application.Services
                 var newRefreshTokenExpirationDate = DateTime.UtcNow
                     .AddDays(_jwtSettings.RefreshTokenExpirationDays);
 
-                // Revocar el token anterior
+                // Revoca el token anterior
                 storedToken.Revoke("Nuevo refresh token generado");
 
-                // Guardar el nuevo refresh token
+                // Guarda el nuevo refresh token
                 var newRefreshTokenEntity = new Domain.Entities.RefreshToken(
                     newRefreshToken,
                     storedToken.UserId,
@@ -208,9 +192,7 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-        /// <summary>
-        /// Revoca un refresh token (logout)
-        /// </summary>
+        //Revoca un refresh token
         public async Task RevokeRefreshTokenAsync(string refreshToken, string reason = "")
         {
             try
@@ -232,16 +214,13 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-        /// <summary>
-        /// Método auxiliar para crear la respuesta de login con tokens
-        /// </summary>
+       
         private async Task<LoginResponseDto> CreateLoginResponse(
             int userId, string email, string role, string name, string phone,
             string? specialty = null, string? imageUrl = null,
             bool isActive = true, DateTime? createdAt = null,
             decimal? pendingBalance = null)
         {
-            // Generar tokens
             var accessToken = _tokenService.GenerateAccessToken(userId, email, role);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
@@ -250,7 +229,6 @@ namespace Brittany_Salon_Backend.Application.Services
             var refreshTokenExpirationDate = DateTime.UtcNow
                 .AddDays(_jwtSettings.RefreshTokenExpirationDays);
 
-            // Guardar refresh token en base de datos
             var refreshTokenEntity = new Domain.Entities.RefreshToken(
                 refreshToken,
                 userId,
