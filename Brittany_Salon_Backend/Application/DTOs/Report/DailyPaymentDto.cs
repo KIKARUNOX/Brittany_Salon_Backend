@@ -1,6 +1,6 @@
 namespace Brittany_Salon_Backend.Application.DTOs.Report
 {
-    public class DailyPaymentDto
+    public class DailyPaymentDto 
     {
         public int PaymentId { get; set; }
         public int AppointmentId { get; set; }

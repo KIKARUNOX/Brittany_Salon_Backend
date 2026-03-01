@@ -11,7 +11,7 @@ namespace Brittany_Salon_Backend.Api.Controllers
         private readonly IReportService _reportService;
 
         public ReportsController(IReportService reportService)
-        {
+        { 
             _reportService = reportService;
         }
 
