@@ -10,5 +10,10 @@ namespace Brittany_Salon_Backend.Application.Services.Interfaces
         Task<RefreshTokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto);
 
         Task RevokeRefreshTokenAsync(string refreshToken, string reason = "");
+
+        Task ForgotPasswordAsync(ForgotPasswordRequestDto dto);
+
+        Task ResetPasswordAsync(ResetPasswordRequestDto dto);
     }
 }
+

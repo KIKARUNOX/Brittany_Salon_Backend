@@ -2,6 +2,7 @@ using Brittany_Salon_Backend.Application.DTOs.Authentication;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
+using Brittany_Salon_Backend.Infrastructure.Services;
 using Brittany_Salon_Backend.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -16,17 +17,23 @@ namespace Brittany_Salon_Backend.Application.Services
         private readonly ITokenService _tokenService;
         private readonly IDevLogger _logger;
         private readonly JwtSettings _jwtSettings;
+        private readonly IEmailService _emailService;
+        private readonly IPasswordResetStore _passwordResetStore;
 
         public AuthenticationService(
             AppDbContext db,
             ITokenService tokenService,
             IDevLogger logger,
-            IOptions<JwtSettings> jwtSettings)
+            IOptions<JwtSettings> jwtSettings,
+            IEmailService emailService,
+            IPasswordResetStore passwordResetStore)
         {
             _db = db;
             _tokenService = tokenService;
             _logger = logger;
             _jwtSettings = jwtSettings.Value;
+            _emailService = emailService;
+            _passwordResetStore = passwordResetStore;
         }
         // Autentica usuario y genera Access Token + Refresh Token
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto)
@@ -257,6 +264,102 @@ namespace Brittany_Salon_Backend.Application.Services
                 IsActive = isActive,
                 CreatedAt = createdAt
             };
+        }
+
+        /// Envía un código de recuperación al email del usuario si está registrado
+        public async Task ForgotPasswordAsync(ForgotPasswordRequestDto dto)
+        {
+            try
+            {
+                var email = dto.Email.Trim().ToLower();
+
+                string userName;
+
+                var employee = await _db.Employees
+                    .FirstOrDefaultAsync(e => e.Email.ToLower() == email);
+
+                if (employee != null)
+                {
+                    userName = employee.Name;
+                }
+                else
+                {
+                    var client = await _db.Clients
+                        .FirstOrDefaultAsync(c => c.Email.ToLower() == email);
+
+                    if (client == null)
+                    {
+                        _logger?.LogWarning($"ForgotPassword: Email no registrado: {email}");
+                        throw new KeyNotFoundException("El correo electronico no esta registrado.");
+                    }
+
+                    userName = client.Name;
+                }
+
+                // Genera código de 6 caracteres alfanuméricos
+                const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                var random = new Random();
+                var code = new string(Enumerable.Repeat(chars, 6)
+                    .Select(s => s[random.Next(s.Length)]).ToArray());
+
+                _passwordResetStore.SaveCode(email, code);
+
+                await _emailService.SendPasswordResetCodeAsync(email, userName, code);
+
+                _logger?.LogInfo($"Código de recuperación enviado a: {email}");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Error en ForgotPasswordAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// Verifica el código y actualiza la contraseña del usuario
+        public async Task ResetPasswordAsync(ResetPasswordRequestDto dto)
+        {
+            try
+            {
+                var email = dto.Email.Trim().ToLower();
+
+                if (!_passwordResetStore.ValidateCode(email, dto.Code))
+                {
+                    _logger?.LogWarning($"ResetPassword: Código inválido o expirado para {email}");
+                    throw new InvalidOperationException("El código de verificación es inválido o ha expirado.");
+                }
+
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+                var employee = await _db.Employees
+                    .FirstOrDefaultAsync(e => e.Email.ToLower() == email);
+
+                if (employee != null)
+                {
+                    employee.Password = hashedPassword;
+                }
+                else
+                {
+                    var client = await _db.Clients
+                        .FirstOrDefaultAsync(c => c.Email.ToLower() == email);
+
+                    if (client == null)
+                    {
+                        throw new InvalidOperationException("Usuario no encontrado.");
+                    }
+
+                    client.Password = hashedPassword;
+                }
+
+                await _db.SaveChangesAsync();
+                _passwordResetStore.RemoveCode(email);
+
+                _logger?.LogInfo($"Contraseña restablecida exitosamente para: {email}");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Error en ResetPasswordAsync: {ex.Message}");
+                throw;
+            }
         }
     }
 }

@@ -75,6 +75,9 @@ builder.Services.AddScoped<IAppointmentService, AppointmentService>(); //Inyecci
 builder.Services.AddScoped<IClientService, ClientService>(); // Inyecci�n de dependencias Client
 builder.Services.AddScoped<ITokenService, TokenService>(); // Inyecci�n de dependencias Token (JWT)
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection(SmtpSettings.SectionName));
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<IPasswordResetStore, PasswordResetStore>();
 builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyecci�n de dependencias Payment
 builder.Services.AddScoped<IProductService, ProductService>(); // Inyecci�n de dependencias Product
 builder.Services.AddScoped<ICategoryService, CategoryService>(); // Inyecci�n de dependencias Category

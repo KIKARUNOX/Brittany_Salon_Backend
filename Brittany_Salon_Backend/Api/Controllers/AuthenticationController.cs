@@ -121,6 +121,80 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 return StatusCode(500, new ErrorResponse { Message = "Error al cerrar sesión" });
             }
         }
+
+        /// <summary>
+        /// Envía un código de recuperación de contraseña al correo del usuario
+        /// </summary>
+        /// <param name="dto">Correo electrónico del usuario</param>
+        /// <returns>Confirmación de envío</returns>
+        /// <response code="200">Código enviado exitosamente</response>
+        /// <response code="404">Email no registrado</response>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Datos de entrada inválidos",
+                        Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                    });
+                }
+
+                await _authService.ForgotPasswordAsync(dto);
+                return Ok(new { message = "Si el correo está registrado, recibirás un código de recuperación." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new ErrorResponse { Message = ex.Message });
+            }
+            catch
+            {
+                return StatusCode(500, new ErrorResponse { Message = "Error interno en el servidor" });
+            }
+        }
+
+        /// <summary>
+        /// Restablece la contraseña usando el código de verificación recibido por correo
+        /// </summary>
+        /// <param name="dto">Email, código de verificación y nueva contraseña</param>
+        /// <returns>Confirmación de restablecimiento</returns>
+        /// <response code="200">Contraseña restablecida exitosamente</response>
+        /// <response code="400">Código inválido o expirado</response>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ErrorResponse
+                    {
+                        Message = "Datos de entrada inválidos",
+                        Errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                    });
+                }
+
+                await _authService.ResetPasswordAsync(dto);
+                return Ok(new { message = "Contraseña restablecida exitosamente." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ErrorResponse { Message = ex.Message });
+            }
+            catch
+            {
+                return StatusCode(500, new ErrorResponse { Message = "Error interno en el servidor" });
+            }
+        }
     }
 
     /// <summary>
