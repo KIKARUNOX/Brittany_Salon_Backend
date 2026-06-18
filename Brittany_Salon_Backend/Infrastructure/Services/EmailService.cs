@@ -1,27 +1,25 @@
-using System.Net;
-using System.Net.Mail;
+using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Settings;
 using Microsoft.Extensions.Options;
+using Resend;
 
 namespace Brittany_Salon_Backend.Infrastructure.Services
 {
     public class EmailService : IEmailService
     {
-        private readonly SmtpSettings _smtp;
+        private readonly IResend _resend;
+        private readonly ResendSettings _settings;
+        private readonly IDevLogger _logger;
 
-        public EmailService(IOptions<SmtpSettings> smtp)
+        public EmailService(IResend resend, IOptions<ResendSettings> settings, IDevLogger logger)
         {
-            _smtp = smtp.Value;
+            _resend = resend;
+            _settings = settings.Value;
+            _logger = logger;
         }
 
         public async Task SendPasswordResetCodeAsync(string toEmail, string toName, string code)
         {
-            using var client = new SmtpClient(_smtp.Host, _smtp.Port)
-            {
-                EnableSsl = _smtp.EnableSsl,
-                Credentials = new NetworkCredential(_smtp.SenderEmail, _smtp.Password)
-            };
-
             var body = $"Hola {toName},\n\n" +
                        $"Tu codigo de recuperacion de contrasena es:\n\n" +
                        $"    {code}\n\n" +
@@ -29,17 +27,18 @@ namespace Brittany_Salon_Backend.Infrastructure.Services
                        $"Si no solicitaste este codigo, ignora este mensaje.\n\n" +
                        $"Brittany Salon";
 
-            var message = new MailMessage
+            var message = new EmailMessage
             {
-                From = new MailAddress(_smtp.SenderEmail, _smtp.SenderName),
+                From = $"{_settings.SenderName} <{_settings.SenderEmail}>",
                 Subject = "Codigo de recuperacion - Brittany Salon",
-                Body = body,
-                IsBodyHtml = false
+                TextBody = body
             };
 
-            message.To.Add(new MailAddress(toEmail, toName));
+            message.To.Add(toEmail);
 
-            await client.SendMailAsync(message);
+            await _resend.EmailSendAsync(message);
+
+            _logger.LogInfo($"Codigo de recuperacion enviado a: {toEmail}");
         }
     }
 }
