@@ -1,12 +1,16 @@
 -- ============================================================
 -- BRITTANY SALON - SCRIPT POSTGRESQL PARA SUPABASE
--- Version: PRODUCCION (sin transaccion, persiste cambios)
+-- Version: TEST (transaccional, no persiste cambios)
 --
 -- USO:
---   1) Ejecutar db_test.sql primero y verificar el resultado
---   2) Si db_test.sql funciona, ejecutar este archivo
---   3) Pegar en Supabase SQL Editor y Run
+--   1) Pegar en Supabase SQL Editor
+--   2) Run: crea todo en una transaccion
+--   3) Revisa los SELECT de verificacion
+--   4) Al final, ROLLBACK descarta todo
+--   5) Si todo se ve bien, ejecuta db.sql (version produccion)
 -- ============================================================
+
+BEGIN;
 
 -- ============================================================
 -- LIMPIEZA PREVENTIVA
@@ -221,3 +225,32 @@ CREATE INDEX "IX_RefreshToken_UserId_UserType" ON "RefreshToken" ("userId", "use
 -- CATEGORIA POR DEFECTO
 INSERT INTO "Category" ("categoryName", "categoryDescription")
 VALUES ('General', 'Categoria por defecto');
+
+-- ============================================================
+-- VERIFICACION (dentro de la transaccion, se ve el resultado)
+-- ============================================================
+SELECT 'Tablas creadas' AS verificacion, count(*) AS total
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'Category','Employee','Client','Service','Product','Inventory',
+    'Review','EmployeeService','Appointment','AppointmentService',
+    'AppointmentProduct','Payment','RefreshToken'
+  );
+
+SELECT 'FK constraints' AS verificacion, count(*) AS total
+FROM information_schema.table_constraints
+WHERE constraint_type = 'FOREIGN KEY'
+  AND table_schema = 'public';
+
+SELECT 'Indices UNIQUE' AS verificacion, count(*) AS total
+FROM pg_indexes
+WHERE schemaname = 'public'
+  AND indexdef LIKE '%UNIQUE%';
+
+SELECT * FROM "Category";
+
+-- ============================================================
+-- ROLLBACK: descarta todo. No se persiste ningun cambio.
+-- ============================================================
+ROLLBACK;
