@@ -111,8 +111,8 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasDefaultValue(true);
 
                 entity.Property(x => x.CreatedAt)
-                      .HasColumnType("datetime")
-                      .HasDefaultValueSql("GETDATE()");
+                      .HasColumnType("timestamp without time zone")
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
 
             modelBuilder.Entity<Appointment>(entity =>
@@ -125,11 +125,11 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .IsRequired();
 
                 entity.Property(x => x.StartTime)
-                      .HasColumnType("datetime")
+                      .HasColumnType("timestamp without time zone")
                       .IsRequired();
 
                 entity.Property(x => x.EndTime)
-                      .HasColumnType("datetime")
+                      .HasColumnType("timestamp without time zone")
                       .IsRequired();
 
                 entity.Property(x => x.AppointmentStatus)
@@ -236,8 +236,8 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .IsRequired();
 
                 entity.Property(x => x.PaymentDate)
-                      .HasColumnType("datetime")
-                      .HasDefaultValueSql("GETDATE()");
+                      .HasColumnType("timestamp without time zone")
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.Property(x => x.PaymentMethod)
                       .HasMaxLength(50);
@@ -300,7 +300,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasDefaultValue(true);
 
                 entity.Property(x => x.LastUpdatedAt)
-                      .HasColumnType("datetime2(7)");
+                      .HasColumnType("timestamp(6)");
 
                 entity.HasOne(x => x.Product)
                       .WithMany()
@@ -331,7 +331,7 @@ namespace Brittany_Salon_Backend.Infrastructure.Persistence
                       .HasDefaultValue(false);
 
                 entity.Property(x => x.CreatedAt)
-                      .HasDefaultValueSql("GETUTCDATE()");
+                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.Property(x => x.RevocationReason)
                       .HasMaxLength(255);
