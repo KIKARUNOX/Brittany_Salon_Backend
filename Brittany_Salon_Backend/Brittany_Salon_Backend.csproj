@@ -4,7 +4,8 @@
   <TargetFramework>net10.0</TargetFramework>
   <Nullable>enable</Nullable>
   <ImplicitUsings>enable</ImplicitUsings>
-</PropertyGroup>
+  <UserSecretsId>4c8bbc77-373d-46eb-a94f-e094573afa0b</UserSecretsId>
+  </PropertyGroup>
 
 <ItemGroup>
   <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
@@ -15,6 +16,7 @@
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     <PrivateAssets>all</PrivateAssets>
   </PackageReference>
+  <PackageReference Include="Resend" Version="0.5.1" />
   <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
   <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
 </ItemGroup>
