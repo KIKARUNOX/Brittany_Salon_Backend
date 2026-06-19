@@ -25,5 +25,6 @@ This file provides high-signal context for AI agents working in this repository.
 
 ## Quirks & Conventions
 - **Logging:** Uses a conditional `IDevLogger` (`DevLogger` in Development, `NullDevLogger` otherwise).
-- **Environment config:** `appsettings.json` contains SQL Server connection strings, SMTP credentials, and JWT secrets for local development.
-- **Migrations:** If making Entity Framework schema changes, run `dotnet ef` commands targeting the `Brittany_Salon_Backend` project where `AppDbContext` is defined.
+- **Database:** PostgreSQL via Supabase (`appsettings.json`). For local dev use `dotnet user-secrets` (Resend API key required).
+- **Solution file:** `Brittany_Salon_Back.sln` at `Brittany_Salon_Backend/` root (not inside project folder).
+- **Migrations:** Run `dotnet ef` commands targeting the `Brittany_Salon_Backend` project where `AppDbContext` is defined.
