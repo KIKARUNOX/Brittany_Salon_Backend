@@ -2,16 +2,17 @@
 -- BRITTANY SALON - SCRIPT POSTGRESQL PARA SUPABASE
 -- Version: PRODUCCION (sin transaccion, persiste cambios)
 --
--- USO:
---   1) Ejecutar db_test.sql primero y verificar el resultado
---   2) Si db_test.sql funciona, ejecutar este archivo
---   3) Pegar en Supabase SQL Editor y Run
+-- ESTRATEGIA: dos fases
+--   1) CREATE TABLE sin FKs inline
+--   2) ALTER TABLE para agregar FKs
+-- Esto evita errores de pre-parseo en Supabase SQL Editor.
+--
+-- USO: pegar en Supabase SQL Editor y Run.
+-- Si necesitas reset, ejecutalo de nuevo: los DROP limpian todo.
 -- ============================================================
 
 -- ============================================================
--- LIMPIEZA PREVENTIVA
--- Ejecutar antes de crear para evitar estado residual de
--- intentos previos. CASCADE elimina dependencias.
+-- LIMPIEZA
 -- ============================================================
 DROP TABLE IF EXISTS "RefreshToken" CASCADE;
 DROP TABLE IF EXISTS "Payment" CASCADE;
@@ -28,13 +29,9 @@ DROP TABLE IF EXISTS "Employee" CASCADE;
 DROP TABLE IF EXISTS "Category" CASCADE;
 
 -- ============================================================
--- CREACION DE TABLAS
--- Orden: primero las tablas sin FK, luego las dependientes.
--- Todos los identificadores se escriben con doble comilla
--- para preservar el case (PascalCase) exactamente.
+-- FASE 1: CREAR TABLAS SIN FOREIGN KEYS
 -- ============================================================
 
--- CATEGORY
 CREATE TABLE "Category" (
     "categoryId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "categoryName" VARCHAR(50) NOT NULL UNIQUE,
@@ -42,7 +39,6 @@ CREATE TABLE "Category" (
     "isActive" BOOLEAN DEFAULT TRUE
 );
 
--- EMPLOYEE
 CREATE TABLE "Employee" (
     "employeeId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "name" VARCHAR(100) NOT NULL,
@@ -55,7 +51,6 @@ CREATE TABLE "Employee" (
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- CLIENT
 CREATE TABLE "Client" (
     "clientId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "name" VARCHAR(100) NOT NULL,
@@ -68,7 +63,6 @@ CREATE TABLE "Client" (
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- SERVICE
 CREATE TABLE "Service" (
     "serviceId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "serviceName" VARCHAR(100) NOT NULL,
@@ -80,7 +74,6 @@ CREATE TABLE "Service" (
     "isActive" BOOLEAN DEFAULT TRUE
 );
 
--- PRODUCT (depende de Category)
 CREATE TABLE "Product" (
     "productId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "productName" VARCHAR(100) NOT NULL,
@@ -89,13 +82,9 @@ CREATE TABLE "Product" (
     "imageUrl" VARCHAR(255),
     "expirationDate" DATE,
     "isActive" BOOLEAN DEFAULT TRUE,
-    "categoryId" INTEGER NOT NULL,
-    CONSTRAINT "FK_Product_Category"
-        FOREIGN KEY ("categoryId")
-        REFERENCES "Category"("categoryId")
+    "categoryId" INTEGER NOT NULL
 );
 
--- INVENTORY (depende de Product)
 CREATE TABLE "Inventory" (
     "inventoryId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "productId" INTEGER NOT NULL UNIQUE,
@@ -105,13 +94,9 @@ CREATE TABLE "Inventory" (
     "location" VARCHAR(100),
     "notes" VARCHAR(255),
     "lastUpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "isActive" BOOLEAN DEFAULT TRUE,
-    CONSTRAINT "FK_Inventory_Product"
-        FOREIGN KEY ("productId")
-        REFERENCES "Product"("productId")
+    "isActive" BOOLEAN DEFAULT TRUE
 );
 
--- REVIEW (depende de Client y Employee)
 CREATE TABLE "Review" (
     "reviewId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "comment" VARCHAR(255),
@@ -120,29 +105,15 @@ CREATE TABLE "Review" (
     "response" VARCHAR(255),
     "reviewDate" DATE DEFAULT CURRENT_DATE,
     "clientId" INTEGER NOT NULL,
-    "employeeId" INTEGER NULL,
-    CONSTRAINT "FK_Review_Client"
-        FOREIGN KEY ("clientId")
-        REFERENCES "Client"("clientId"),
-    CONSTRAINT "FK_Review_Employee"
-        FOREIGN KEY ("employeeId")
-        REFERENCES "Employee"("employeeId")
+    "employeeId" INTEGER NULL
 );
 
--- EMPLOYEE SERVICE (depende de Employee y Service)
 CREATE TABLE "EmployeeService" (
     "employeeServiceId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "employeeId" INTEGER NOT NULL,
-    "serviceId" INTEGER NOT NULL,
-    CONSTRAINT "FK_EmployeeService_Employee"
-        FOREIGN KEY ("employeeId")
-        REFERENCES "Employee"("employeeId"),
-    CONSTRAINT "FK_EmployeeService_Service"
-        FOREIGN KEY ("serviceId")
-        REFERENCES "Service"("serviceId")
+    "serviceId" INTEGER NOT NULL
 );
 
--- APPOINTMENT (depende de Client)
 CREATE TABLE "Appointment" (
     "appointmentId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "appointmentDate" DATE NOT NULL,
@@ -152,43 +123,23 @@ CREATE TABLE "Appointment" (
     "totalCost" DECIMAL(10,2),
     "isActive" BOOLEAN DEFAULT TRUE,
     "clientId" INTEGER NOT NULL,
-    "hairLengthOption" INTEGER,
-    CONSTRAINT "FK_Appointment_Client"
-        FOREIGN KEY ("clientId")
-        REFERENCES "Client"("clientId")
+    "hairLengthOption" INTEGER
 );
 
--- APPOINTMENT SERVICE (depende de Appointment y Service)
 CREATE TABLE "AppointmentService" (
     "appointmentServiceId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "appointmentId" INTEGER NOT NULL,
     "serviceId" INTEGER NOT NULL,
-    "servicePrice" DECIMAL(10,2),
-    CONSTRAINT "FK_AppointmentService_Appointment"
-        FOREIGN KEY ("appointmentId")
-        REFERENCES "Appointment"("appointmentId"),
-    CONSTRAINT "FK_AppointmentService_Service"
-        FOREIGN KEY ("serviceId")
-        REFERENCES "Service"("serviceId")
+    "servicePrice" DECIMAL(10,2)
 );
 
--- APPOINTMENT PRODUCT (depende de Appointment y Product)
 CREATE TABLE "AppointmentProduct" (
     "appointmentProductId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "appointmentId" INTEGER NOT NULL,
     "productId" INTEGER NOT NULL,
-    "quantity" INTEGER NOT NULL DEFAULT 1,
-    CONSTRAINT "FK_AppointmentProduct_Appointment"
-        FOREIGN KEY ("appointmentId")
-        REFERENCES "Appointment"("appointmentId"),
-    CONSTRAINT "FK_AppointmentProduct_Product"
-        FOREIGN KEY ("productId")
-        REFERENCES "Product"("productId"),
-    CONSTRAINT "UQ_AppointmentProduct_AppointmentId_ProductId"
-        UNIQUE ("appointmentId", "productId")
+    "quantity" INTEGER NOT NULL DEFAULT 1
 );
 
--- PAYMENT (depende de Appointment)
 CREATE TABLE "Payment" (
     "paymentId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "appointmentId" INTEGER NOT NULL,
@@ -196,13 +147,9 @@ CREATE TABLE "Payment" (
     "paymentStatus" VARCHAR(50),
     "paymentDate" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "paymentMethod" VARCHAR(50),
-    "isActive" BOOLEAN DEFAULT TRUE,
-    CONSTRAINT "FK_Payment_Appointment"
-        FOREIGN KEY ("appointmentId")
-        REFERENCES "Appointment"("appointmentId")
+    "isActive" BOOLEAN DEFAULT TRUE
 );
 
--- REFRESH TOKEN (sin FK, solo indices)
 CREATE TABLE "RefreshToken" (
     "refreshTokenId" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     "token" VARCHAR(500) NOT NULL,
@@ -215,9 +162,72 @@ CREATE TABLE "RefreshToken" (
     "revocationReason" VARCHAR(255)
 );
 
+-- ============================================================
+-- FASE 2: AGREGAR FOREIGN KEYS Y CONSTRAINTS
+-- ============================================================
+
+ALTER TABLE "Product"
+    ADD CONSTRAINT "FK_Product_Category"
+    FOREIGN KEY ("categoryId") REFERENCES "Category"("categoryId");
+
+ALTER TABLE "Inventory"
+    ADD CONSTRAINT "FK_Inventory_Product"
+    FOREIGN KEY ("productId") REFERENCES "Product"("productId");
+
+ALTER TABLE "Review"
+    ADD CONSTRAINT "FK_Review_Client"
+    FOREIGN KEY ("clientId") REFERENCES "Client"("clientId");
+
+ALTER TABLE "Review"
+    ADD CONSTRAINT "FK_Review_Employee"
+    FOREIGN KEY ("employeeId") REFERENCES "Employee"("employeeId");
+
+ALTER TABLE "EmployeeService"
+    ADD CONSTRAINT "FK_EmployeeService_Employee"
+    FOREIGN KEY ("employeeId") REFERENCES "Employee"("employeeId");
+
+ALTER TABLE "EmployeeService"
+    ADD CONSTRAINT "FK_EmployeeService_Service"
+    FOREIGN KEY ("serviceId") REFERENCES "Service"("serviceId");
+
+ALTER TABLE "Appointment"
+    ADD CONSTRAINT "FK_Appointment_Client"
+    FOREIGN KEY ("clientId") REFERENCES "Client"("clientId");
+
+ALTER TABLE "AppointmentService"
+    ADD CONSTRAINT "FK_AppointmentService_Appointment"
+    FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("appointmentId");
+
+ALTER TABLE "AppointmentService"
+    ADD CONSTRAINT "FK_AppointmentService_Service"
+    FOREIGN KEY ("serviceId") REFERENCES "Service"("serviceId");
+
+ALTER TABLE "AppointmentProduct"
+    ADD CONSTRAINT "FK_AppointmentProduct_Appointment"
+    FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("appointmentId");
+
+ALTER TABLE "AppointmentProduct"
+    ADD CONSTRAINT "FK_AppointmentProduct_Product"
+    FOREIGN KEY ("productId") REFERENCES "Product"("productId");
+
+ALTER TABLE "AppointmentProduct"
+    ADD CONSTRAINT "UQ_AppointmentProduct_AppointmentId_ProductId"
+    UNIQUE ("appointmentId", "productId");
+
+ALTER TABLE "Payment"
+    ADD CONSTRAINT "FK_Payment_Appointment"
+    FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("appointmentId");
+
+-- ============================================================
+-- INDICES
+-- ============================================================
+
 CREATE UNIQUE INDEX "IX_RefreshToken_Token" ON "RefreshToken" ("token");
 CREATE INDEX "IX_RefreshToken_UserId_UserType" ON "RefreshToken" ("userId", "userType");
 
--- CATEGORIA POR DEFECTO
+-- ============================================================
+-- DATOS INICIALES
+-- ============================================================
+
 INSERT INTO "Category" ("categoryName", "categoryDescription")
 VALUES ('General', 'Categoria por defecto');
