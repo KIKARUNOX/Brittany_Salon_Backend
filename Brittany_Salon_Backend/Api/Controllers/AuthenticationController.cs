@@ -123,16 +123,19 @@ namespace Brittany_Salon_Backend.Api.Controllers
         }
 
         /// <summary>
-        /// Envía un código de recuperación de contraseña al correo del usuario
+        /// Envía un código de recuperación de contraseña al correo del usuario.
+        /// La respuesta es siempre la misma para evitar enumeración de cuentas.
         /// </summary>
         /// <param name="dto">Correo electrónico del usuario</param>
-        /// <returns>Confirmación de envío</returns>
-        /// <response code="200">Código enviado exitosamente</response>
-        /// <response code="404">Email no registrado</response>
+        /// <returns>Confirmación genérica de solicitud</returns>
+        /// <response code="200">Solicitud procesada (con o sin envío real)</response>
+        /// <response code="400">Datos de entrada inválidos</response>
+        /// <response code="429">Demasiadas solicitudes</response>
         [HttpPost("forgot-password")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
         public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
         {
             try
@@ -146,12 +149,15 @@ namespace Brittany_Salon_Backend.Api.Controllers
                     });
                 }
 
-                await _authService.ForgotPasswordAsync(dto);
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
+                await _authService.ForgotPasswordAsync(dto, clientIp);
+
                 return Ok(new { message = "Si el correo está registrado, recibirás un código de recuperación." });
             }
-            catch (KeyNotFoundException ex)
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Demasiadas", StringComparison.OrdinalIgnoreCase))
             {
-                return NotFound(new ErrorResponse { Message = ex.Message });
+                return StatusCode(StatusCodes.Status429TooManyRequests,
+                    new ErrorResponse { Message = "Demasiadas solicitudes. Intenta más tarde." });
             }
             catch
             {

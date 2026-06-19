@@ -1,5 +1,8 @@
 using Brittany_Salon_Backend.Application.Services;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Settings;
+using Brittany_Salon_Backend.Application.Tools;
+using Brittany_Salon_Backend.Application.Tools.Interfaces;
 using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Services;
@@ -34,6 +37,8 @@ options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectio
 
 // Configuración JWT
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
+builder.Services.Configure<RecoveryCodeSettings>(builder.Configuration.GetSection(RecoveryCodeSettings.SectionName));
 
 // Autenticación con JWT
 var jwtSettings = new JwtSettings();
@@ -82,8 +87,12 @@ builder.Services.AddResend(o =>
         ?? throw new InvalidOperationException("Resend API key not configured. Set it via User Secrets or environment variable: ResendSettings__ApiKey");
 });
 builder.Services.Configure<ResendSettings>(builder.Configuration.GetSection(ResendSettings.SectionName));
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddSingleton<IPasswordResetStore, PasswordResetStore>();
+builder.Services.AddScoped<IRecoveryCodeGenerator, RecoveryCodeGenerator>();
+builder.Services.AddSingleton<IRecoveryCodeStore, InMemoryRecoveryCodeStore>();
+builder.Services.AddSingleton<IRecoveryCodeRateLimiter, RecoveryCodeRateLimiter>();
+builder.Services.AddScoped<IRecoveryCodeValidator, RecoveryCodeValidator>();
+builder.Services.AddScoped<IRecoveryCodeSender, RecoveryCodeSender>();
+builder.Services.AddScoped<IRecoveryFlow, RecoveryFlow>();
 builder.Services.AddScoped<IPaymentService, PaymentService>(); // Inyecci�n de dependencias Payment
 builder.Services.AddScoped<IProductService, ProductService>(); // Inyecci�n de dependencias Product
 builder.Services.AddScoped<ICategoryService, CategoryService>(); // Inyecci�n de dependencias Category

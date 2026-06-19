@@ -1,8 +1,10 @@
 using Brittany_Salon_Backend.Application.DTOs.Authentication;
+using Brittany_Salon_Backend.Application.Services;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
+using Brittany_Salon_Backend.Application.Tools.Interfaces;
+using Brittany_Salon_Backend.Application.Tools.Models;
 using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
-using Brittany_Salon_Backend.Infrastructure.Services;
 using Brittany_Salon_Backend.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -10,37 +12,32 @@ using BCrypt.Net;
 
 namespace Brittany_Salon_Backend.Application.Services
 {
-   //service de auth con jwt
     public class AuthenticationService : IAuthenticationService
     {
         private readonly AppDbContext _db;
         private readonly ITokenService _tokenService;
         private readonly IDevLogger _logger;
         private readonly JwtSettings _jwtSettings;
-        private readonly IEmailService _emailService;
-        private readonly IPasswordResetStore _passwordResetStore;
+        private readonly IRecoveryFlow _recoveryFlow;
 
         public AuthenticationService(
             AppDbContext db,
             ITokenService tokenService,
             IDevLogger logger,
             IOptions<JwtSettings> jwtSettings,
-            IEmailService emailService,
-            IPasswordResetStore passwordResetStore)
+            IRecoveryFlow recoveryFlow)
         {
             _db = db;
             _tokenService = tokenService;
             _logger = logger;
             _jwtSettings = jwtSettings.Value;
-            _emailService = emailService;
-            _passwordResetStore = passwordResetStore;
+            _recoveryFlow = recoveryFlow;
         }
-        // Autentica usuario y genera Access Token + Refresh Token
+
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto dto)
         {
             try
             {
-                // Validación de entrada
                 if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
                 {
                     _logger?.LogWarning("Login: Email y contraseña son requeridos");
@@ -49,7 +46,6 @@ namespace Brittany_Salon_Backend.Application.Services
 
                 var email = dto.Email.Trim().ToLower();
 
-                // Intentar autenticar como Employee
                 var employee = await _db.Employees
                     .FirstOrDefaultAsync(e => e.Email.ToLower() == email);
 
@@ -72,7 +68,6 @@ namespace Brittany_Salon_Backend.Application.Services
                         employee.IsActive, employee.DateCreated);
                 }
 
-                // Intentar autenticar como Client
                 var client = await _db.Clients
                     .FirstOrDefaultAsync(c => c.Email.ToLower() == email);
 
@@ -105,12 +100,10 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-        /// Refresca los tokens usando un Refresh Token válido
         public async Task<RefreshTokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
         {
             try
             {
-                // Validar entrada
                 if (string.IsNullOrWhiteSpace(dto.RefreshToken))
                 {
                     _logger?.LogWarning("RefreshToken: Token vacío");
@@ -158,7 +151,6 @@ namespace Brittany_Salon_Backend.Application.Services
                     role = "CLIENT";
                 }
 
-                // Genera nuevos tokens
                 var newAccessToken = _tokenService.GenerateAccessToken(storedToken.UserId, email, role);
                 var newRefreshToken = _tokenService.GenerateRefreshToken();
 
@@ -167,10 +159,8 @@ namespace Brittany_Salon_Backend.Application.Services
                 var newRefreshTokenExpirationDate = DateTime.UtcNow
                     .AddDays(_jwtSettings.RefreshTokenExpirationDays);
 
-                // Revoca el token anterior
                 storedToken.Revoke("Nuevo refresh token generado");
 
-                // Guarda el nuevo refresh token
                 var newRefreshTokenEntity = new Domain.Entities.RefreshToken(
                     newRefreshToken,
                     storedToken.UserId,
@@ -199,7 +189,6 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-        //Revoca un refresh token
         public async Task RevokeRefreshTokenAsync(string refreshToken, string reason = "")
         {
             try
@@ -217,11 +206,10 @@ namespace Brittany_Salon_Backend.Application.Services
             catch (Exception ex)
             {
                 _logger?.LogError($"Error al revocar refresh token: {ex.Message}");
-                // No lanzar excepción en revoke, solo log
             }
         }
 
-       
+
         private async Task<LoginResponseDto> CreateLoginResponse(
             int userId, string email, string role, string name, string phone,
             string? specialty = null, string? imageUrl = null,
@@ -266,47 +254,24 @@ namespace Brittany_Salon_Backend.Application.Services
             };
         }
 
-        /// Envía un código de recuperación al email del usuario si está registrado
-        public async Task ForgotPasswordAsync(ForgotPasswordRequestDto dto)
+        public async Task ForgotPasswordAsync(ForgotPasswordRequestDto dto, string? clientIp = null)
         {
             try
             {
-                var email = dto.Email.Trim().ToLower();
+                var outcome = await _recoveryFlow.RequestCodeAsync(dto, clientIp ?? string.Empty);
 
-                string userName;
-
-                var employee = await _db.Employees
-                    .FirstOrDefaultAsync(e => e.Email.ToLower() == email);
-
-                if (employee != null)
+                if (outcome.Status == RecoveryRequestStatus.RateLimited)
                 {
-                    userName = employee.Name;
+                    var seconds = outcome.RetryAfter?.TotalSeconds is double s && s > 0
+                        ? (int)Math.Ceiling(s)
+                        : 60;
+                    throw new InvalidOperationException(
+                        $"Demasiadas solicitudes. Intenta en {seconds} segundos.");
                 }
-                else
-                {
-                    var client = await _db.Clients
-                        .FirstOrDefaultAsync(c => c.Email.ToLower() == email);
-
-                    if (client == null)
-                    {
-                        _logger?.LogWarning($"ForgotPassword: Email no registrado: {email}");
-                        throw new KeyNotFoundException("El correo electronico no esta registrado.");
-                    }
-
-                    userName = client.Name;
-                }
-
-                // Genera código de 6 caracteres alfanuméricos
-                const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-                var random = new Random();
-                var code = new string(Enumerable.Repeat(chars, 6)
-                    .Select(s => s[random.Next(s.Length)]).ToArray());
-
-                _passwordResetStore.SaveCode(email, code);
-
-                await _emailService.SendPasswordResetCodeAsync(email, userName, code);
-
-                _logger?.LogInfo($"Código de recuperación enviado a: {email}");
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -315,45 +280,29 @@ namespace Brittany_Salon_Backend.Application.Services
             }
         }
 
-        /// Verifica el código y actualiza la contraseña del usuario
         public async Task ResetPasswordAsync(ResetPasswordRequestDto dto)
         {
             try
             {
-                var email = dto.Email.Trim().ToLower();
+                var outcome = await _recoveryFlow.ResetPasswordAsync(dto);
 
-                if (!_passwordResetStore.ValidateCode(email, dto.Code))
+                switch (outcome.Status)
                 {
-                    _logger?.LogWarning($"ResetPassword: Código inválido o expirado para {email}");
-                    throw new InvalidOperationException("El código de verificación es inválido o ha expirado.");
+                    case RecoveryResetStatus.Success:
+                        return;
+
+                    case RecoveryResetStatus.AttemptLimitExceeded:
+                        throw new InvalidOperationException(
+                            outcome.Message ?? "Demasiados intentos. Intenta más tarde.");
+
+                    default:
+                        throw new InvalidOperationException(
+                            outcome.Message ?? "El código de verificación es inválido o ha expirado.");
                 }
-
-                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-
-                var employee = await _db.Employees
-                    .FirstOrDefaultAsync(e => e.Email.ToLower() == email);
-
-                if (employee != null)
-                {
-                    employee.Password = hashedPassword;
-                }
-                else
-                {
-                    var client = await _db.Clients
-                        .FirstOrDefaultAsync(c => c.Email.ToLower() == email);
-
-                    if (client == null)
-                    {
-                        throw new InvalidOperationException("Usuario no encontrado.");
-                    }
-
-                    client.Password = hashedPassword;
-                }
-
-                await _db.SaveChangesAsync();
-                _passwordResetStore.RemoveCode(email);
-
-                _logger?.LogInfo($"Contraseña restablecida exitosamente para: {email}");
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
