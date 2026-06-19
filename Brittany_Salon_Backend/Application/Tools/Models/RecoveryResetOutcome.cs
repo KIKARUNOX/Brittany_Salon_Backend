@@ -3,7 +3,9 @@ namespace Brittany_Salon_Backend.Application.Tools.Models;
 public enum RecoveryResetStatus
 {
     Success,
-    InvalidOrExpiredCode,
+    InvalidCode,
+    ExpiredCode,
+    NoActiveCode,
     AttemptLimitExceeded,
     UserNotFound,
     UserInactive

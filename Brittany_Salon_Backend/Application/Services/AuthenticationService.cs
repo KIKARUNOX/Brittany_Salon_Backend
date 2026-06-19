@@ -1,4 +1,5 @@
 using Brittany_Salon_Backend.Application.DTOs.Authentication;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Brittany_Salon_Backend.Application.Tools.Interfaces;
@@ -6,6 +7,7 @@ using Brittany_Salon_Backend.Application.Tools.Models;
 using Brittany_Salon_Backend.Infrastructure.Logging;
 using Brittany_Salon_Backend.Infrastructure.Persistence;
 using Brittany_Salon_Backend.Infrastructure.Settings;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using BCrypt.Net;
@@ -262,14 +264,13 @@ namespace Brittany_Salon_Backend.Application.Services
 
                 if (outcome.Status == RecoveryRequestStatus.RateLimited)
                 {
-                    var seconds = outcome.RetryAfter?.TotalSeconds is double s && s > 0
-                        ? (int)Math.Ceiling(s)
-                        : 60;
-                    throw new InvalidOperationException(
-                        $"Demasiadas solicitudes. Intenta en {seconds} segundos.");
+                    var retryAfter = outcome.RetryAfter ?? TimeSpan.FromSeconds(60);
+                    throw new RateLimitExceededException(
+                        $"Demasiadas solicitudes. Intenta en {(int)Math.Ceiling(retryAfter.TotalSeconds)} segundos.",
+                        retryAfter);
                 }
             }
-            catch (InvalidOperationException)
+            catch (RateLimitExceededException)
             {
                 throw;
             }
@@ -292,13 +293,27 @@ namespace Brittany_Salon_Backend.Application.Services
                         return;
 
                     case RecoveryResetStatus.AttemptLimitExceeded:
-                        throw new InvalidOperationException(
-                            outcome.Message ?? "Demasiados intentos. Intenta más tarde.");
+                        throw new RateLimitExceededException(
+                            outcome.Message ?? "Demasiados intentos. Intenta más tarde.",
+                            outcome.RetryAfter);
 
+                    case RecoveryResetStatus.ExpiredCode:
+                        throw new InvalidOperationException(
+                            outcome.Message ?? "El código ha expirado.")
+                        {
+                            Data = { ["HttpStatusCode"] = StatusCodes.Status410Gone }
+                        };
+
+                    case RecoveryResetStatus.InvalidCode:
+                    case RecoveryResetStatus.NoActiveCode:
                     default:
                         throw new InvalidOperationException(
-                            outcome.Message ?? "El código de verificación es inválido o ha expirado.");
+                            outcome.Message ?? "El código de verificación es inválido.");
                 }
+            }
+            catch (RateLimitExceededException)
+            {
+                throw;
             }
             catch (InvalidOperationException)
             {

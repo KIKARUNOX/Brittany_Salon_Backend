@@ -1,4 +1,5 @@
 using Brittany_Salon_Backend.Application.DTOs.Authentication;
+using Brittany_Salon_Backend.Application.Exceptions;
 using Brittany_Salon_Backend.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -154,10 +155,10 @@ namespace Brittany_Salon_Backend.Api.Controllers
 
                 return Ok(new { message = "Si el correo está registrado, recibirás un código de recuperación." });
             }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("Demasiadas", StringComparison.OrdinalIgnoreCase))
+            catch (RateLimitExceededException ex)
             {
                 return StatusCode(StatusCodes.Status429TooManyRequests,
-                    new ErrorResponse { Message = "Demasiadas solicitudes. Intenta más tarde." });
+                    new ErrorResponse { Message = ex.Message });
             }
             catch
             {
@@ -171,11 +172,15 @@ namespace Brittany_Salon_Backend.Api.Controllers
         /// <param name="dto">Email, código de verificación y nueva contraseña</param>
         /// <returns>Confirmación de restablecimiento</returns>
         /// <response code="200">Contraseña restablecida exitosamente</response>
-        /// <response code="400">Código inválido o expirado</response>
+        /// <response code="400">Código inválido</response>
+        /// <response code="410">Código expirado</response>
+        /// <response code="429">Demasiados intentos</response>
         [HttpPost("reset-password")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status410Gone)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
         public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
         {
             try
@@ -192,9 +197,17 @@ namespace Brittany_Salon_Backend.Api.Controllers
                 await _authService.ResetPasswordAsync(dto);
                 return Ok(new { message = "Contraseña restablecida exitosamente." });
             }
+            catch (RateLimitExceededException ex)
+            {
+                return StatusCode(StatusCodes.Status429TooManyRequests,
+                    new ErrorResponse { Message = ex.Message });
+            }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new ErrorResponse { Message = ex.Message });
+                var status = ex.Data.Contains("HttpStatusCode")
+                    ? (int)ex.Data["HttpStatusCode"]!
+                    : StatusCodes.Status400BadRequest;
+                return StatusCode(status, new ErrorResponse { Message = ex.Message });
             }
             catch
             {

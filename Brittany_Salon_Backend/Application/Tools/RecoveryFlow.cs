@@ -109,8 +109,8 @@ public sealed class RecoveryFlow : IRecoveryFlow
         {
             return new RecoveryResetOutcome
             {
-                Status = RecoveryResetStatus.InvalidOrExpiredCode,
-                Message = "Código de verificación inválido o expirado."
+                Status = RecoveryResetStatus.InvalidCode,
+                Message = "Código de verificación inválido."
             };
         }
 
@@ -127,12 +127,26 @@ public sealed class RecoveryFlow : IRecoveryFlow
                 };
 
             case RecoveryValidationStatus.Expired:
+                return new RecoveryResetOutcome
+                {
+                    Status = RecoveryResetStatus.ExpiredCode,
+                    Message = "El código ha expirado. Solicita uno nuevo.",
+                    RemainingAttempts = validation.RemainingAttempts
+                };
+
             case RecoveryValidationStatus.NoActiveCode:
+                return new RecoveryResetOutcome
+                {
+                    Status = RecoveryResetStatus.NoActiveCode,
+                    Message = "No hay un código activo. Solicita uno nuevo.",
+                    RemainingAttempts = validation.RemainingAttempts
+                };
+
             case RecoveryValidationStatus.InvalidCode:
                 return new RecoveryResetOutcome
                 {
-                    Status = RecoveryResetStatus.InvalidOrExpiredCode,
-                    Message = "Código de verificación inválido o expirado.",
+                    Status = RecoveryResetStatus.InvalidCode,
+                    Message = "El código ingresado es incorrecto.",
                     RemainingAttempts = validation.RemainingAttempts
                 };
         }
